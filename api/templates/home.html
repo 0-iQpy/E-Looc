@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+
+    <title>E-Looc</title>
+
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' type='text/css' media='screen' href='../static/style.css'>
+
+
+</head>
+
+<body>
+
+    <header class="header">
+
+        <div class="logo">
+            <img src="../static/calamba.svg" alt="Logo 1">
+            <img src="../static/looc.svg" alt="Logo 2">
+        </div>
+
+        <nav class="navbar">
+
+            <a href="#home" class="active">Home</a>
+            <a href="#services" class="active">Services</a>
+            <a href="#bulletin" class="active">Bulletin</a>
+            <a href="#faq" class="active">FAQ's</a>
+            <a href="http://docs.google.com/forms/u/0/?pli=1" class="Active">Report</a>
+
+        </nav>
+
+        </div>
+
+    </header>
+
+
+    <main id="home" class="main-content">
+        <div class="logo-container">
+            <img src="./dave/images/ccc.svg" alt="Logo 1">
+            <img src="./dave/images/looc.svg" alt="Logo 2">
+        </div>
+
+        <h1>Barangay Looc</h1>
+        <p>Calamba City, Laguna</p>
+
+    </main>
+
+    <div id="services" class="services-container">
+        <h1>SERVICES THAT WE OFFER</h1>
+        <section class="services">
+            <section class="service-card">
+                <img src="cer.png" alt="Certificates" />
+                <h2>Certificates and IDs</h2>
+                <p>Services on how to get barangay clearance, of residency and more.</p>
+            </section>
+            <section class="service-card">
+                <img src="e-icon.png" alt="Education" />
+                <h2>Education</h2>
+                <p>Services on enrollment to local schools and daycare centers.</p>
+            </section>
+            <section class="service-card">
+                <img src="disaster-icon.png" alt="Disaster" />
+                <h2>Disaster and Risk</h2>
+                <p>Services on weather and disaster management and complaints.</p>
+            </section>
+            <section class="service-card">
+                <img src="projects-icon.png" alt="Projects" />
+                <h2>Projects</h2>
+                <p>Services on upcoming projects of the Barangay.</p>
+            </section>
+            <section class="service-card">
+                <img src="senior-icon.png" alt="Senior Citizens" />
+                <h2>Senior Citizens</h2>
+                <p>Providing care, support, and essential services for the well-being of senior citizens.</p>
+            </section>
+            <section class="service-card">
+                <img src="vawc-icon.png" alt="VAWC" />
+                <h2>VAWC</h2>
+                <p>Offering support, protection, and services for victims of violence against women and children.</p>
+            </section>
+            <section class="service-card">
+                <img src="job-icon.png" alt="Job Hiring" />
+                <h2>Job Hiring</h2>
+                <p>Providing opportunities through job hiring for career growth and employment.</p>
+            </section>
+        </section>
+    </div>
+
+        <div id="bulletin" class="bulletin-container">
+                <center>  <h2>BULLETIN BOARD</h2>  </center>
+                <div class="bulletin-cards">
+                    <div class="card">
+                        <h3>Walang Kuryente</h3>
+                        <small>March 25, 2025</small>
+                        <p>Mawawalan ng kuryente sa darating na Martes dahil sa maintenance ng linya ng kuryente.</p>
+                    </div>
+                    <div class="card">
+                      <h3></h3>
+                      <small></small>
+                      <p></p>
+                    </div>
+                    <div class="card">
+                      <h3></h3>
+                      <small></small>
+                      <p></p>
+                    </div>
+                    <div class="card">
+                      <h3></h3>
+                      <small></small>
+                      <p></p>
+                    </div>
+                </div>
+        </div>
+
+        <div id="bulletin" class="bulletin-container">
+            <center>  <h2>NEWS AND EVENTS</h2>  </center>
+            <div class="bulletin-cards">
+                <div class="card">
+                    <h3>CCC: Website</h3>
+                    <small>March 25, 2025</small>
+                    <p>nabababafwfdasdfasdfdadwdawdqwddasdawdasdwadwadwdawdadawdawdwawdsxdasdanana</p>
+                </div>
+                <div class="card">
+                  <h3></h3>
+                  <small></small>
+                  <p></p>
+                </div>
+                <div class="card">
+                  <h3></h3>
+                  <small></small>
+                  <p></p>
+                </div>
+                <div class="card">
+                  <h3></h3>
+                  <small></small>
+                  <p></p>
+                </div>
+            </div>
+        </div>
+
+
+
+</body>
+    <footer class="footer">
+        <div class="logos">
+            <img src="logo1.png" alt="Logo 1">
+            <img src="logo2.png" alt="Logo 2">
+            <img src="logo3.png" alt="Logo 3">
+        </div>
+        <div class="contact-section">
+            <h3>Barangay Contact</h3>
+            <p><img src="location.png" alt="Location"> Barangay Hall Address</p>
+            <p><img src="phone.png" alt="Phone"> 012-345-6789</p>
+            <p><img src="facebook.png" alt="Facebook"> Barangay FB page</p>
+            <p><img src="messenger.png" alt="Messenger"> Barangay FB page</p>
+        </div>
+        <div class="contact-section">
+            <h3>Emergency Contact</h3>
+            <p><img src="police.png" alt="Police"> 012-345-6789</p>
+            <p><img src="fire.png" alt="Fire"> 012-345-6789</p>
+            <p><img src="medical.png" alt="Medical"> 012-345-6789</p>
+        </div>
+    </footer>
+    <script>
+            document.querySelectorAll('.bulletin-cards .card').forEach(card => {
+              card.addEventListener('click', () => {
+                document.querySelectorAll('.bulletin-cards .card')
+                        .forEach(c => c.classList.remove('expanded'));
+                card.classList.add('expanded');
+              });
+            });
+    </script>
+</html>
