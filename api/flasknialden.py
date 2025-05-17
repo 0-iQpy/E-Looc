@@ -3,8 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import pytz
 import os
-
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -19,6 +19,11 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Helper function to get current time in Asia/Manila timezone
+def get_manila_time():
+    manila_tz = pytz.timezone('Asia/Manila')
+    return datetime.now(manila_tz)
 
 
 # Define database models
@@ -40,7 +45,7 @@ class BulletinPost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
+    date_posted = db.Column(db.DateTime, default=get_manila_time)
     is_active = db.Column(db.Boolean, default=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -51,7 +56,7 @@ class NewsPost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
+    date_posted = db.Column(db.DateTime, default=get_manila_time)
     is_active = db.Column(db.Boolean, default=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -61,6 +66,7 @@ class NewsPost(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
+
 
 # Routes for public pages
 @app.route('/')
@@ -135,7 +141,8 @@ def admin_create_bulletin():
             title=title,
             content=content,
             is_active=is_active,
-            created_by=current_user.id
+            created_by=current_user.id,
+            date_posted=get_manila_time()
         )
 
         db.session.add(bulletin)
@@ -197,7 +204,8 @@ def admin_create_news():
             title=title,
             content=content,
             is_active=is_active,
-            created_by=current_user.id
+            created_by=current_user.id,
+            date_posted=get_manila_time()
         )
 
         db.session.add(news)
@@ -221,7 +229,7 @@ def admin_edit_news(id):
 
         db.session.commit()
 
-        flash('News item updated successfully!', 'success')
+        flash('News & Events updated successfully!', 'success')
         return redirect(url_for('admin_news'))
 
     return render_template('admin/news/edit.html', news=news)
@@ -276,6 +284,7 @@ def initialize_database():
             db.create_all()
             print("Database initialized.")
 
+
 @app.errorhandler(500)
 def internal_error(error):
     return "500 error: {}".format(error), 500
@@ -285,3 +294,4 @@ if __name__ == '__main__':
     initialize_database()
     #app.run(debug=True)
     app.run(host="0.0.0.0", debug=True)
+

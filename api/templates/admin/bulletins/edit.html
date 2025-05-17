@@ -1,10 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "admin/layout.html" %}
 
-</body>
-</html>
+{% block title %}Edit Bulletin Post - E-Looc Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="h3 mb-4 text-gray-800">Edit Bulletin Post</h1>
+  <div class="card shadow mb-4">
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('admin_edit_bulletin', id=bulletin.id) }}">
+        <div class="mb-3">
+          <label for="title" class="form-label">Title</label>
+          <input type="text" class="form-control" id="title" name="title" value="{{ bulletin.title }}" required>
+        </div>
+        <div class="mb-3">
+          <label for="content" class="form-label">Content</label>
+          <textarea class="form-control" id="content" name="content" rows="6" required>{{ bulletin.content }}</textarea>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if bulletin.is_active %}checked{% endif %}>
+          <label class="form-check-label" for="is_active">
+            Active
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Update Bulletin</button>
+        <a href="{{ url_for('admin_bulletins') }}" class="btn btn-secondary ms-2">Cancel</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

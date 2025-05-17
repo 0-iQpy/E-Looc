@@ -2,9 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Create Bulletin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background: #f9f9f9; }
+        h1 { color: #333; }
+        form { max-width: 600px; margin-top: 1rem; }
+        label { display: block; margin-top: 10px; }
+        input[type="text"], textarea {
+            width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;
+        }
+        input[type="checkbox"] { margin-top: 10px; }
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #007bff; color: white;
+            border: none; border-radius: 4px;
+        }
+        button:hover { background-color: #0056b3; }
+    </style>
 </head>
 <body>
+    <h1>Create Bulletin</h1>
+    <form method="POST">
+        <label>Title</label>
+        <input type="text" name="title" required>
 
+        <label>Content</label>
+        <textarea name="content" rows="6" required></textarea>
+
+        <label>
+            <input type="checkbox" name="is_active"> Active
+        </label>
+
+        <button type="submit">Create</button>
+    </form>
 </body>
 </html>

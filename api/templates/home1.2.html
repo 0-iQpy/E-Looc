@@ -165,62 +165,29 @@
   <div id="bulletin" class="section bulletin-container">
     <h2>Bulletin Board</h2>
     <div class="bulletin-cards" id="bulletin-cards">
-      <div class="card">
-        <h3>Walang Kuryente</h3>
-        <small><i class="far fa-calendar-alt"></i> March 25, 2025</small>
-        <p>
-          Mawawalan ng kuryente sa darating na Martes dahil sa maintenance ng linya
-          ng kuryente.
-        </p>
-      </div>
-      <div class="card">
-        <h3>Community Clean-up Drive</h3>
-        <small><i class="far fa-calendar-alt"></i> March 30, 2025</small>
-        <p>
-          Join us for our monthly clean-up drive at the Barangay Plaza. Bring gloves
-          and trash bags.
-        </p>
-      </div>
-      <div class="card">
-        <h3>Free Medical Mission</h3>
-        <small><i class="far fa-calendar-alt"></i> April 5, 2025</small>
-        <p>
-          Free medical check-ups and consultations at the Barangay covered court
-          from 8AM to 3PM.
-        </p>
-      </div>
+        {% for bulletin in bulletins %}
+        <div class="card">
+            <h3>{{ bulletin.title }}</h3>
+            <small><i class="far fa-calendar-alt"></i> {{ bulletin.date_posted.strftime('%B %d, %Y %I:%M %p') }}</small>
+            <p>{{ bulletin.content }}</p>
+        </div>
+        {% endfor %}
     </div>
-  </div>
+</div>
 
-  <div id="news" class="section bulletin-container">
+<div id="news" class="section bulletin-container">
     <h2>News and Events</h2>
     <div class="bulletin-cards">
-      <div class="card">
-        <h3>CCC: Website Launch</h3>
-        <small><i class="far fa-calendar-alt"></i> March 25, 2025</small>
-        <p>
-          Barangay Looc launches new website to better serve residents with online
-          information and services.
-        </p>
-      </div>
-      <div class="card">
-        <h3>Scholarship Program</h3>
-        <small><i class="far fa-calendar-alt"></i> April 2, 2025</small>
-        <p>
-          Applications for the 2025 Barangay Scholarship Program are now open. See
-          requirements below.
-        </p>
-      </div>
-      <div class="card">
-        <h3>Basketball Tournament</h3>
-        <small><i class="far fa-calendar-alt"></i> April 10, 2025</small>
-        <p>
-          Annual Barangay Basketball Tournament will start this month. Register
-          your team now!
-        </p>
-      </div>
+        {% for news_item in news %}
+        <div class="card">
+            <h3>{{ news_item.title }}</h3>
+            <small><i class="far fa-calendar-alt"></i> {{ news_item.date_posted.strftime('%B %d, %Y %I:%M %p') }}</small>
+            <p>{{ news_item.content }}</p>
+        </div>
+        {% endfor %}
     </div>
-  </div>
+</div>
+
 
   <div id="faqs" class="section faq-container">
     <h2>Frequently Asked Questions</h2>
