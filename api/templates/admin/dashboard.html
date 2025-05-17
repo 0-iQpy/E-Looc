@@ -1,0 +1,72 @@
+{% extends "admin/layout.html" %}
+{% block title %}Dashboard - E-Looc Admin{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h1 class="h3 mb-4 text-gray-800">Dashboard</h1>
+  <div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card dashboard-stat bg-primary text-white">
+        <div class="dashboard-stat-content">
+          <h5>Bulletin Posts</h5>
+          <div class="dashboard-stat-number">{{ bulletin_count }}</div>
+        </div>
+        <div class="dashboard-stat-icon">
+          <i class="fas fa-bullhorn"></i>
+        </div>
+      </div>
+    </div>
+<div class="col-xl-3 col-md-6 mb-4">
+  <div class="card dashboard-stat bg-success text-white">
+    <div class="dashboard-stat-content">
+      <h5>News & Events</h5>
+      <div class="dashboard-stat-number">{{ news_count }}</div>
+    </div>
+    <div class="dashboard-stat-icon">
+      <i class="fas fa-newspaper"></i>
+    </div>
+  </div>
+</div>
+  </div>
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Quick Actions</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <a href="{{ url_for('admin_create_bulletin') }}" class="btn btn-primary btn-block w-100">
+                <i class="fas fa-plus-circle me-2"></i> Add Bulletin Post
+              </a>
+            </div>
+            <div class="col-md-6 mb-3">
+              <a href="{{ url_for('admin_create_news') }}" class="btn btn-primary btn-block w-100">
+                <i class="fas fa-plus-circle me-2"></i> Add News Item
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+<div class="col-lg-6">
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">Help & Information</h5>
+    </div>
+    <div class="card-body">
+      <p class="mb-0">
+        <i class="fas fa-info-circle me-2 text-info"></i>
+        Welcome to the E-Looc Barangay Administration Panel. From here, you can manage bulletin board posts and news items that appear on the public website.
+      </p>
+      <hr>
+      <p class="mb-0">
+        <i class="fas fa-question-circle me-2 text-warning"></i>
+        If you need help or have questions, please contact the system administrator.
+      </p>
+    </div>
+  </div>
+</div>
+  </div>
+</div>
+{% endblock %}
