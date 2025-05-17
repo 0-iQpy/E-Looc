@@ -279,7 +279,7 @@ def setup():
 
 # Initialize database if it doesn't exist
 def initialize_database():
-    if not os.path.exists('api/instance/elooc.db'):
+    if not os.path.exists('instance/elooc.db'):
         with app.app_context():
             db.create_all()
             print("Database initialized.")
