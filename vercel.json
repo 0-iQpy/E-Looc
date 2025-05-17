@@ -1,14 +1,14 @@
  {
      "builds": [
          {
-             "src": "api/flasknialden.py",
+             "src": "api/main.py",
              "use": "@vercel/python"
          }
      ],
      "routes": [
          {
              "src": "/(.*)",
-             "dest": "api/flasknialden.py"
+             "dest": "api/main.py"
          }
      ]
  }
