@@ -4,34 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d496ad93-5fd2-4d4e-8f55-d9beb28eb5af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/flasker.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/bagong-pilipinas.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/calamba.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/ccc.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/img/preview1.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/looc.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/style.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/style1.1.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/bulletins/create.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/bulletins/edit.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/bulletins/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/dashboard.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/layout.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/login.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/news/create.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/news/edit.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/news/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/admin/setup.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/home1.2.html" afterDir="false" />
-    </list>
+    <list default="true" id="d496ad93-5fd2-4d4e-8f55-d9beb28eb5af" name="Changes" comment="e-looc supabase &amp; vercel" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -47,6 +20,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "0-iQpy"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/0-iQpy/E-Looc.git",
+    "accountId": "3d1a8c42-e2a0-439c-ac3e-1eb830da635c"
+  }
+}]]></component>
   <component name="ProjectColorInfo"><![CDATA[{
   "associatedIndex": 5
 }]]></component>
@@ -62,11 +47,12 @@
     "Python.main.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/Cristian/Desktop/e-looc-2/flasker/api/templates/admin/news"
+    "last_opened_file_path": "C:/Users/Cristian/Desktop/e-looc-2/flasker"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Cristian\Desktop\e-looc-2\flasker" />
       <recent name="C:\Users\Cristian\Desktop\e-looc-2\flasker\api\templates\admin\news" />
       <recent name="C:\Users\Cristian\Desktop\e-looc-2\flasker\api\static" />
     </key>
@@ -115,6 +101,19 @@
       <option name="presentableId" value="Default" />
       <updated>1747472774318</updated>
     </task>
+    <task id="LOCAL-00001" summary="e-looc supabase &amp; vercel">
+      <option name="closed" value="true" />
+      <created>1747492443077</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1747492443077</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="e-looc supabase &amp; vercel" />
+    <option name="LAST_COMMIT_MESSAGE" value="e-looc supabase &amp; vercel" />
   </component>
 </project>
