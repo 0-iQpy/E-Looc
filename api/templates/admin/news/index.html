@@ -36,11 +36,13 @@
                     </form>
                 </td>
             </tr>
+            {% else %}
+          <tr>
+            <td colspan="4" class="text-center">No bulletin posts found.</td>
+          </tr>
             {% endfor %}
         </tbody>
     </table>
-        <td colspan="4" class="text-center">No News & Events posts found.</td>
-
     </div>
   </div>
 </div>
