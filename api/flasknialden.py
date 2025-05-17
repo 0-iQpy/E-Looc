@@ -8,8 +8,8 @@ import os
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key_here'  # gamitan natin to ng cryptography yung tinuro ni maem
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///elooc.db'
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")  # gamitan natin to ng cryptography yung tinuro ni maem
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy
@@ -277,21 +277,11 @@ def setup():
     return render_template('admin/setup.html')
 
 
-# Initialize database if it doesn't exist
-def initialize_database():
-    if not os.path.exists('instance/elooc.db'):
-        with app.app_context():
-            db.create_all()
-            print("Database initialized.")
-
-
 @app.errorhandler(500)
 def internal_error(error):
     return "500 error: {}".format(error), 500
 
 
 if __name__ == '__main__':
-    initialize_database()
     #app.run(debug=True)
     app.run(host="0.0.0.0", debug=True)
-
