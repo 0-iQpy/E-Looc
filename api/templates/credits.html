@@ -1,0 +1,399 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credits - E-Looc</title>
+    <meta name="title" content="E-Looc" />
+    <meta name="description" content="Welcome to the Brgy. Looc Website" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://e-looc.vercel.app/" />
+    <meta property="og:title" content="E-Looc" />
+    <meta property="og:description" content="Welcome to the Brgy. Looc Website" />
+    <meta property="og:site_name" content="E-Looc">
+    <meta property="og:image" content="https://e-looc.vercel.app/static/img/preview1.png" />
+    <meta property="twitter:url" content="https://e-looc.vercel.app/" />
+    <meta property="twitter:title" content="E-Looc" />
+    <meta property="twitter:description" content="Welcome to the Brgy. Looc Website" />
+    <meta property="twitter:image" content="https://e-looc.vercel.app/static/img/preview1.png" />
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    />
+    <link
+        rel="stylesheet"
+        type="text/css"
+        media="screen"
+        href="../static/style1.1.css"
+    />
+    <style>
+        /* Fix for Hamburger Menu */
+        .menu-toggle {
+            display: none;
+        }
+
+        /* Hamburger menu styles */
+        .menu-icon {
+            display: none;
+            color: var(--text-light);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            z-index: 101;
+        }
+
+        .menu-icon:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+            z-index: 99;
+        }
+
+        @media (max-width: 768px) {
+            .menu-icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                position: relative;
+            }
+
+            .menu-toggle:checked ~ .menu-backdrop {
+                opacity: 1;
+                visibility: visible;
+            }
+            .menu-toggle:checked ~ .nav-links {
+                right: 0;
+                visibility: visible;
+                opacity: 1;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 80%;
+                max-width: 300px;
+                height: 100vh;
+                flex-direction: column;
+                background-color: var(--primary-color);
+                padding: 5rem 2rem 2rem;
+                gap: 1.5rem;
+                box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+                transition: all 0.3s ease;
+                z-index: 100;
+                overflow-y: auto;
+                visibility: hidden;
+                opacity: 0;
+            }
+        }
+
+        /* Credits Page Specific Styles */
+        .credits-hero {
+            background: linear-gradient(rgba(10, 36, 114, 0.8), rgba(10, 36, 114, 0.6)), url('../static/hero-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            color: var(--text-light);
+            text-align: center;
+            padding: 4rem 1rem;
+            margin-bottom: 0;
+        }
+
+        .credits-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .credits-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background-color: var(--accent-color);
+        }
+
+        .credits-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .credit-card {
+            background-color: var(--light-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            height: 100%;
+        }
+
+        .credit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .credit-card img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1rem;
+            border: 3px solid var(--accent-color);
+        }
+
+        .credit-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .credit-card p {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 991px) {
+            .credits-container {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .credits-title {
+                font-size: 2rem;
+            }
+
+            .credit-card img {
+                width: 120px;
+                height: 120px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .credits-container {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 1.5rem;
+                padding: 1rem;
+            }
+
+            .credit-card {
+                padding: 1rem;
+            }
+
+            .credit-card img {
+                width: 100px;
+                height: 100px;
+            }
+
+            .credit-card h3 {
+                font-size: 1rem;
+            }
+
+            .credit-card p {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="../static/bagong-pilipinas.svg" alt="Bagong Pilipinas Logo" />
+            <img src="../static/calamba.svg" alt="Calamba Logo" />
+            <img src="../static/ccc.svg" alt="CCC Logo" />
+            <img src="../static/looc.svg" alt="Barangay Looc Logo" />
+        </div>
+        <nav class="navbar">
+            <input type="checkbox" id="menu-toggle" class="menu-toggle" />
+            <label for="menu-toggle" class="menu-icon">
+                <i class="fas fa-bars"></i>
+            </label>
+            <div class="menu-backdrop"></div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/">Services</a>
+                <a href="/">Bulletin</a>
+                <a href="/">News & Events</a>
+                <a href="/">FAQs</a>
+                <a href="/credits" class="active">Credits</a>
+                <a
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSeFbZ3-TxZA_8bdHduCV7yyQPfaUVtSfftW1RtqpDb9GcniRQ/viewform"
+                    target="_blank"
+                    class="report-btn"
+                >Report</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Credits Hero Section -->
+    <section class="credits-hero">
+        <div class="hero-section">
+            <div class="logo-container">
+                <img src="../static/calamba.svg" alt="Calamba City Logo" />
+                <img src="../static/looc.svg" alt="Barangay Looc Logo" />
+            </div>
+            <h1>Our Team</h1>
+            <p>Meet the people behind the E-Looc Portal</p>
+        </div>
+    </section>
+
+    <!-- Credits Section -->
+    <section class="services-container">
+        <h2 class="credits-title">Credits</h2>
+        <div class="credits-container">
+            <div class="credit-card">
+                <img src="/static/img/sadkian.jpg" alt="" />
+                <h3>kian na malongkot</h3>
+                <p>Position: Bottom</p>
+            </div>
+
+            <div class="credit-card">
+                <img src="/static/img/leb.jpg" alt="Lebron Catubao" />
+                <h3>Lebron Catubao</h3>
+                <p>Position: Top</p>
+            </div>
+
+            <div class="credit-card">
+                <img src="/static/img/me.jpg" alt="Cristian Dave R. Ordoñez" />
+                <h3>Cristian Dave R. Ordoñez</h3>
+                <p>Taga-luto ng Canton</p>
+            </div>
+
+            <div class="credit-card">
+                <img src="../static/img/kian.jpg" alt="Team Member 3" />
+                <h3>Kian Limbo</h3>
+                <p>Exp Laner</p>
+            </div>
+
+            <div class="credit-card">
+                <img src="../static/img/mendez.jpg" alt="Team Member 4" />
+                <h3>John Paulo Mendez</h3>
+                <p>Frontend</p>
+            </div>
+
+            <div class="credit-card">
+                <img src="../static/img/brandon.jpg" alt="Team Member 5" />
+                <h3>Brandon Ralph U. Pachica</h3>
+                <p>Nigga</p>
+            </div>
+
+            <div class="credit-card">
+                <img src="../static/img/lucero.jpg" alt="Team Member 6" />
+                <h3>Mark John Lucero</h3>
+                <p>Mage</p>
+            </div>
+
+            <div class="credit-card">
+                <img src="../static/img/alden.jpg" alt="Team Member 7" />
+                <h3>Alden Richards</h3>
+                <p>Taga-dila</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-column">
+                <div class="logos">
+                    <img src="../static/calamba.svg" alt="Calamba City Logo" />
+                    <img src="../static/looc.svg" alt="Barangay Looc Logo" />
+                </div>
+                <p class="tagline">
+                    Serving our community with dedication and excellence(kunwaring qoute).
+                </p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fa-solid fa-address-card"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-column">
+                <h3>Barangay Contact</h3>
+                <p><i class="fas fa-map-marker-alt"></i> 123 Main Street, Brgy. Looc, Calamba City</p>
+                <p><i class="fas fa-phone"></i> 012-345-6789</p>
+                <p><i class="fab fa-facebook"></i> Barangay Looc Official</p>
+                <p><i class="fab fa-facebook-messenger"></i> @BarangayLooc</p>
+            </div>
+
+            <div class="footer-column">
+                <h3>Emergency Contact</h3>
+                <p><i class="fas fa-shield-alt"></i> Police: 012-345-6789</p>
+                <p><i class="fas fa-fire-extinguisher"></i> Fire: 012-345-6789</p>
+                <p><i class="fas fa-ambulance"></i> Medical: 012-345-6789</p>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2025 Barangay Looc, Calamba City. All Rights Reserved.</p>
+        </div>
+    </footer>
+    <script>
+        // JavaScript to toggle hamburger menu and handle backdrop
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const menuBackdrop = document.querySelector('.menu-backdrop');
+            const menuIcon = document.querySelector('.menu-icon i');
+
+            // Close menu when clicking on backdrop
+            menuBackdrop.addEventListener('click', function() {
+                menuToggle.checked = false;
+                menuIcon.className = 'fas fa-bars'; // Reset icon when closing via backdrop
+            });
+
+            // Toggle icon animation
+            menuToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    menuIcon.className = 'fas fa-times'; // Change to X icon
+                } else {
+                    menuIcon.className = 'fas fa-bars';  // Change back to bars icon
+                }
+            });
+
+            // Close menu when clicking on any nav link
+            const navLinks = document.querySelectorAll('.nav-links a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    menuToggle.checked = false;
+                    menuIcon.className = 'fas fa-bars'; // Reset icon when closing via navigation
+                });
+            });
+        });
+    </script>
+</body>
+</html>

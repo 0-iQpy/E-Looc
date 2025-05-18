@@ -91,7 +91,7 @@ def index():
     bulletins = bulletins_resp.data or []
     news = news_resp.data or []
     manila_time = get_manila_time().strftime("%B %d, %Y %I:%M %p")
-    return render_template("home1.2.html", bulletins=bulletins, news=news)
+    return render_template("home.html", bulletins=bulletins, news=news)
 
 
 @app.route("/admin")
@@ -354,6 +354,9 @@ def datetimeformat(value, format="%B %d, %Y %I:%M %p"):
     dt = dt.astimezone(manila)
     return dt.strftime(format)
 
+@app.route("/credits")
+def credit():
+    return render_template("credits.html")
 
 if __name__ == "__main__":
     # Use 0.0.0.0 to be reachable in local network, change debug to False in production

@@ -9,17 +9,16 @@
 
   <meta name="title" content="E-Looc" />
   <meta name="description" content="Welcome to the Brgy. Looc Website" />
-  <meta property="og:type content="website" />
+  <meta property="og:type content=website" />
   <meta property="og:url" content="https://e-looc.vercel.app/" />
   <meta property="og:title" content="E-Looc" />
   <meta property="og:description" content="Welcome to the Brgy. Looc Website" />
-  <meta property="og:site_name" content="Link preview site name">
-  <meta property="og:image" content="https://e-looc.vercel.app/static/img/preview1.png" />
-  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="og:site_name" content="E-Looc">
+  <meta property="og:image" content="https://e-looc.vercel.app/static/img/preview.png" />
   <meta property="twitter:url" content="https://e-looc.vercel.app/" />
   <meta property="twitter:title" content="E-Looc" />
   <meta property="twitter:description" content="Welcome to the Brgy. Looc Website" />
-  <meta property="twitter:image" content="https://replug.io/images/example.png" />
+  <meta property="twitter:image" content="https://e-looc.vercel.app/static/img/preview1.png" />
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -53,6 +52,7 @@
       <input type="checkbox" id="menu-toggle" class="menu-toggle" />
       <label for="menu-toggle" class="menu-icon">
         <i class="fas fa-bars"></i>
+        <i class="fas fa-times"></i> <!-- Add this line -->
       </label>
       <div class="menu-backdrop"></div>
       <div class="nav-links">
@@ -61,6 +61,7 @@
         <a href="#bulletin">Bulletin</a>
         <a href="#news">News & Events</a>
         <a href="#faqs">FAQs</a>
+        <a href="/credits">Credits</a>
         <a
           href="https://docs.google.com/forms/d/e/1FAIpQLSeFbZ3-TxZA_8bdHduCV7yyQPfaUVtSfftW1RtqpDb9GcniRQ/viewform"
           target="_blank"
@@ -88,14 +89,14 @@
     <div class="services">
       <div class="service-card">
         <div class="service-icon">
-          <img src="cer.png" alt="Certificates" />
+          <img src="cert.png" alt="Certificates" />
         </div>
         <h3>Certificates and IDs</h3>
         <p>
           Services on how to get barangay clearance, certificates of residency and
           more.
         </p>
-        <a href="#" class="service-link">Learn More</a>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSeFbZ3-TxZA_8bdHduCV7yyQPfaUVtSfftW1RtqpDb9GcniRQ/viewform" target="_blank" class="service-link">Learn More</a>
       </div>
 
       <div class="service-card">
@@ -260,6 +261,7 @@
           <a href="#"><i class="fab fa-facebook"></i></a>
           <a href="#"><i class="fab fa-twitter"></i></a>
           <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="/credits"><i class="fa-solid fa-address-card"></i></a>
         </div>
       </div>
 
@@ -330,6 +332,7 @@
       });
     });
 
+    // Prevent scrolling when mobile menu is open
     document.getElementById("menu-toggle").addEventListener("change", function () {
       document.body.style.overflow = this.checked ? "hidden" : "";
     });
