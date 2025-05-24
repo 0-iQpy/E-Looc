@@ -4,21 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d496ad93-5fd2-4d4e-8f55-d9beb28eb5af" name="Changes" comment="E-Looc">
-      <change afterPath="$PROJECT_DIR$/api/static/1_20250524_060626_0000.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/3_20250524_060626_0002.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/5_20250524_060626_0004.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/certificate.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/pwd.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/risk.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/static/senior.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/templates/about.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/flasker.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/flasker.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="d496ad93-5fd2-4d4e-8f55-d9beb28eb5af" name="Changes" comment="patch update">
+      <change afterPath="$PROJECT_DIR$/api/static/img/alden.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/api/templates/alden.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/templates/admin/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/api/templates/admin/dashboard.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/templates/credits.html" beforeDir="false" afterPath="$PROJECT_DIR$/api/templates/credits.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/api/templates/about.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/templates/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/api/templates/home.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -63,19 +54,20 @@
     "Python.main.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/Cristian/Desktop/E-Looc/api/static",
+    "last_opened_file_path": "C:/Users/Cristian/Desktop/E-Looc/api/templates",
     "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Cristian\Desktop\E-Looc\api\templates" />
       <recent name="C:\Users\Cristian\Desktop\E-Looc\api\static" />
       <recent name="C:\Users\Cristian\Desktop\E-Looc\api\static\img" />
       <recent name="C:\Users\Cristian\Desktop\e-looc-2\flasker" />
       <recent name="C:\Users\Cristian\Desktop\e-looc-2\flasker\api\templates\admin\news" />
-      <recent name="C:\Users\Cristian\Desktop\e-looc-2\flasker\api\static" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Cristian\Desktop\E-Looc\api\static\img" />
       <recent name="C:\Users\Cristian\Desktop\E-Looc\api\static" />
       <recent name="C:\Users\Cristian\Desktop\e-looc-2\flasker\api\static" />
       <recent name="C:\Users\Cristian\Desktop\e-looc-2\flasker\api\static\img" />
@@ -162,12 +154,21 @@
       <option name="project" value="LOCAL" />
       <updated>1747570802713</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="patch update">
+      <option name="closed" value="true" />
+      <created>1748048051447</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1748048051447</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="e-looc supabase &amp; vercel" />
     <MESSAGE value="E-Looc" />
-    <option name="LAST_COMMIT_MESSAGE" value="E-Looc" />
+    <MESSAGE value="patch update" />
+    <option name="LAST_COMMIT_MESSAGE" value="patch update" />
   </component>
 </project>
