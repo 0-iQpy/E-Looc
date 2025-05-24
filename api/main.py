@@ -358,6 +358,10 @@ def datetimeformat(value, format="%B %d, %Y %I:%M %p"):
 def credit():
     return render_template("credits.html")
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
 if __name__ == "__main__":
     # Use 0.0.0.0 to be reachable in local network, change debug to False in production
     app.run(host="0.0.0.0", debug=True)#
