@@ -383,25 +383,34 @@
         </div>
     </section>
 
-    <section class="services-container">
-        <h2 class="credits-title">Map of Looc</h2>
-        <div class="credits-container">
-            <div id="googleMap" style="aspect-ratio: 16/9"></div>
-
-        <script>
-        function myMap() {
-        var mapProp= {
-          center:new google.maps.LatLng(51.508742,-0.120850),
-          zoom:5,
-        };
-        var map = new google.maps.Map(document.getElementById("googleMap"),mapProp);
-        }
-        </script>
-
-        <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY&callback=myMap"></script>
-
-        </div>
+        <section class="services-container">
+  <h2 class="credits-title">Map of Looc</h2>
+  <div style="display: flex; justify-content: center; align-items: center;">
+    <iframe
+      src="https://maps.google.com/maps?hl=en&q=Looc+Barangay+Hall,+Almon,+Calamba,+Laguna,+4027,+Philippines&ll=14.22678,121.179226&spn=0.021631,0.032015&output=embed"
+      width="900"
+      height="450"
+      style="border:0;"
+      allowfullscreen
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+  </div>
     </section>
+
+    <section class="services-container">
+        <h2 class="credits-title">Boundaries of Looc</h2>
+          <div style="display: flex; justify-content: center; align-items: center;">
+            <img
+              src="../static/loocboundaries.jpg"
+              alt="Looc Map Image"
+              width="900"
+              height="450"
+              style="border: 0; object-fit: cover;" />
+          </div>
+    </section>
+
+
 
     <footer class="footer">
         <div class="footer-container">
