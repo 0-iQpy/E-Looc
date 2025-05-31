@@ -4,9 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d496ad93-5fd2-4d4e-8f55-d9beb28eb5af" name="Changes" comment="patch update: live chat">
+    <list default="true" id="d496ad93-5fd2-4d4e-8f55-d9beb28eb5af" name="Changes" comment=".gitignore">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/static/3_20250524_060626_0002.svg" beforeDir="false" afterPath="$PROJECT_DIR$/api/static/business.svg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/api/templates/about.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/templates/admin/layout.html" beforeDir="false" afterPath="$PROJECT_DIR$/api/templates/admin/layout.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/templates/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/api/templates/home.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -190,8 +193,43 @@
       <option name="project" value="LOCAL" />
       <updated>1748335393989</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="patch update: live chat and maps">
+      <option name="closed" value="true" />
+      <created>1748338541453</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1748338541453</updated>
+    </task>
+    <task id="LOCAL-00012" summary="patch update: live chat and maps">
+      <option name="closed" value="true" />
+      <created>1748338769450</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1748338769450</updated>
+    </task>
+    <task id="LOCAL-00013" summary=".gitignore">
+      <option name="closed" value="true" />
+      <created>1748514320024</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1748514320025</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="e-looc supabase &amp; vercel" />
@@ -199,6 +237,8 @@
     <MESSAGE value="patch update" />
     <MESSAGE value="patch update: added certificate request in admin dashboard" />
     <MESSAGE value="patch update: live chat" />
-    <option name="LAST_COMMIT_MESSAGE" value="patch update: live chat" />
+    <MESSAGE value="patch update: live chat and maps" />
+    <MESSAGE value=".gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value=".gitignore" />
   </component>
 </project>
