@@ -15,18 +15,26 @@
           <thead>
             <tr>
               <th>Title</th>
+              <th>Image</th>
               <th>Date Posted</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {% for bulletin in bulletins %}
+            {% for bulletin in bulletins %}  {# Assuming 'bulletins' is the context variable passed from the route #}
             <tr>
               <td>{{ bulletin.title }}</td>
+              <td>
+                {% if bulletin.image_url %}
+                  <img src="{{ bulletin.image_url }}" alt="Bulletin Image" style="width: 100px; height: auto;">
+                {% else %}
+                  No Image
+                {% endif %}
+              </td>
               <td><small><i class="far fa-calendar-alt"></i>
-       {{ bulletin.date_posted | datetimeformat }}</small>
-</td>
+                {{ bulletin.date_posted | datetimeformat }}</small>
+              </td>
               <td>
                 {% if bulletin.is_active %}
                 <span class="badge bg-success">Active</span>
@@ -41,23 +49,23 @@
                 <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ bulletin.id }}">
                   <i class="fas fa-trash"></i>
                 </button>
-            <!-- Delete Modal -->
-            <div class="modal fade" id="deleteModal{{ bulletin.id }}" tabindex="-1" aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title">Confirm Delete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
-                    Are you sure you want to delete the bulletin: <strong>{{ bulletin.title }}</strong>?
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <form action="{{ url_for('admin_delete_bulletin', id=bulletin.id) }}" method="POST" class="d-inline">
-                      <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
-                  </div>
+                <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal{{ bulletin.id }}" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Confirm Delete</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        Are you sure you want to delete the bulletin item: <strong>{{ bulletin.title }}</strong>?
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form action="{{ url_for('admin_delete_bulletin', id=bulletin.id) }}" method="POST" class="d-inline">
+                          <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                      </div>
                 </div>
               </div>
             </div>
@@ -65,7 +73,7 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="4" class="text-center">No bulletins found</td>
+          <td colspan="5" class="text-center">No bulletin items found</td>
         </tr>
         {% endfor %}
       </tbody>

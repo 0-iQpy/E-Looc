@@ -1,5 +1,5 @@
 {% extends "admin/layout.html" %}
-{% block title %}Bulletin Board - E-Looc Admin{% endblock %}
+{% block title %}News & Events - E-Looc Admin{% endblock %}
 {% block content %}
 <div class="container-fluid">
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -15,6 +15,7 @@
           <thead>
             <tr>
               <th>Title</th>
+              <th>Image</th>
               <th>Date Posted</th>
               <th>Status</th>
               <th>Actions</th>
@@ -24,6 +25,13 @@
             {% for news_item in news_items %}
             <tr>
               <td>{{ news_item.title }}</td>
+              <td>
+                {% if news_item.image_url %}
+                  <img src="{{ news_item.image_url }}" alt="News Image" style="width: 100px; height: auto;">
+                {% else %}
+                  No Image
+                {% endif %}
+              </td>
               <td><small><i class="far fa-calendar-alt"></i>
        {{ news_item.date_posted | datetimeformat }}</small>
 </td>
@@ -65,7 +73,7 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="4" class="text-center">No news items found</td>
+          <td colspan="5" class="text-center">No news items found</td>
         </tr>
         {% endfor %}
       </tbody>
