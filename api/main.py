@@ -9,13 +9,11 @@ from flask_login import (
     current_user,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
 from datetime import datetime
 import pytz
 from dateutil import parser
 from dotenv import load_dotenv
 from supabase import create_client, Client
-import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -41,59 +39,6 @@ login_manager.login_view = "admin_login"
 def get_manila_time():
     manila_tz = pytz.timezone("Asia/Manila")
     return datetime.now(manila_tz)
-
-# Helper function to upload image to Supabase Storage
-def upload_to_supabase_storage(file, bucket_name):
-    if not file or not file.filename:
-        app.logger.info("upload_to_supabase_storage: No file or filename provided.")
-        return None
-
-    try:
-        # Corrected f-string:
-        filename = f"{int(time.time())}_{secure_filename(file.filename)}"
-
-        app.logger.info(f"Attempting to upload {filename} to bucket {bucket_name}")
-
-        # Perform the upload
-        supabase.storage.from_(bucket_name).upload(
-            path=filename,
-            file=file.read(), # file.read() is important to get bytes
-            file_options={"content-type": file.content_type}
-        )
-
-        # If no exception was raised, the upload is successful.
-        # Get the public URL using the Supabase client's method.
-        public_url = supabase.storage.from_(bucket_name).get_public_url(filename)
-        app.logger.info(f"Successfully uploaded {filename} to {bucket_name}. Public URL: {public_url}")
-        return public_url
-
-    except Exception as e:
-        app.logger.error(f"Error uploading {file.filename if file else 'unknown file'} to {bucket_name}: {type(e).__name__} - {str(e)}")
-        return None
-
-# Helper function to delete image from Supabase Storage
-def delete_from_supabase_storage(image_url, bucket_name):
-    if not image_url:
-        return False
-    try:
-        # Extract filename from URL
-        filename = image_url.split(f"{bucket_name}/")[-1]
-        if not filename:
-            return False
-        response = supabase.storage.from_(bucket_name).remove([filename])
-        if response.status_code == 200 and response.json(): # Check if deletion was successful
-             # Check if the first item in the response list (if any) indicates success
-            if response.json()[0].get('message') == 'Successfully removed':
-                return True
-            else:
-                app.logger.error(f"Supabase delete error response: {response.json()}")
-                return False
-        else:
-            app.logger.error(f"Supabase delete error status {response.status_code}: {response.json()}")
-            return False
-    except Exception as e:
-        app.logger.error(f"Error deleting from Supabase: {e}")
-        return False
 
 class User(UserMixin):
     def __init__(self, id, username, password_hash, name, role):
@@ -129,7 +74,7 @@ def load_user(user_id):
 def index():
     bulletins_resp = (
         supabase.table("bulletin_posts")
-        .select("*, image_url")
+        .select("*")
         .eq("is_active", True)
         .order("date_posted", desc=True)
         .limit(8)
@@ -137,7 +82,7 @@ def index():
     )
     news_resp = (
         supabase.table("news_posts")
-        .select("*, image_url")
+        .select("*")
         .eq("is_active", True)
         .order("date_posted", desc=True)
         .limit(8)
@@ -214,7 +159,7 @@ def admin_dashboard():
 @app.route("/admin/bulletins")
 @login_required
 def admin_bulletins():
-    bulletins_resp = supabase.table("bulletin_posts").select("*, image_url").order("date_posted", desc=True).execute()
+    bulletins_resp = supabase.table("bulletin_posts").select("*").order("date_posted", desc=True).execute()
     bulletins = bulletins_resp.data or []
     return render_template("admin/bulletins/index.html", bulletins=bulletins)
 
@@ -226,15 +171,6 @@ def admin_create_bulletin():
         title = request.form.get("title")
         content = request.form.get("content")
         is_active = bool(request.form.get("is_active"))
-        image_file = request.files.get("image")
-        image_url = None
-
-        if image_file:
-            image_url = upload_to_supabase_storage(image_file, "bulletin-images")
-            if not image_url:
-                flash("Image upload failed. Please try again.", "danger")
-                return render_template("admin/bulletins/create.html")
-
 
         data = {
             "title": title,
@@ -242,7 +178,6 @@ def admin_create_bulletin():
             "is_active": is_active,
             "created_by": current_user.id,
             "date_posted": get_manila_time().isoformat(),
-            "image_url": image_url,
         }
 
         supabase.table("bulletin_posts").insert(data).execute()
@@ -256,7 +191,7 @@ def admin_create_bulletin():
 @app.route("/admin/bulletins/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def admin_edit_bulletin(id):
-    resp = supabase.table("bulletin_posts").select("*, image_url").eq("id", id).single().execute()
+    resp = supabase.table("bulletin_posts").select("*").eq("id", id).single().execute()
     bulletin = resp.data
 
     if not bulletin:
@@ -267,29 +202,12 @@ def admin_edit_bulletin(id):
         title = request.form.get("title")
         content = request.form.get("content")
         is_active = bool(request.form.get("is_active"))
-        image_file = request.files.get("image")
-        remove_image = request.form.get("remove_image") == "true"
-        old_image_url = bulletin.get("image_url")
 
         update_data = {
             "title": title,
             "content": content,
             "is_active": is_active,
         }
-
-        if remove_image:
-            if old_image_url:
-                delete_from_supabase_storage(old_image_url, "bulletin-images")
-            update_data["image_url"] = None
-        elif image_file:
-            if old_image_url:
-                delete_from_supabase_storage(old_image_url, "bulletin-images")
-            new_image_url = upload_to_supabase_storage(image_file, "bulletin-images")
-            if new_image_url:
-                update_data["image_url"] = new_image_url
-            else:
-                flash("Image upload failed. Please try again.", "danger")
-                return render_template("admin/bulletins/edit.html", bulletin=bulletin)
 
         supabase.table("bulletin_posts").update(update_data).eq("id", id).execute()
 
@@ -302,13 +220,6 @@ def admin_edit_bulletin(id):
 @app.route("/admin/bulletins/delete/<int:id>", methods=["POST"])
 @login_required
 def admin_delete_bulletin(id):
-    # Fetch the bulletin to get its image_url before deleting
-    resp = supabase.table("bulletin_posts").select("image_url").eq("id", id).single().execute()
-    bulletin_data = resp.data
-
-    if bulletin_data and bulletin_data.get("image_url"):
-        delete_from_supabase_storage(bulletin_data["image_url"], "bulletin-images")
-
     supabase.table("bulletin_posts").delete().eq("id", id).execute()
     flash("Bulletin deleted successfully!", "success")
     return redirect(url_for("admin_bulletins"))
@@ -319,7 +230,7 @@ def admin_delete_bulletin(id):
 @app.route("/admin/news")
 @login_required
 def admin_news():
-    news_resp = supabase.table("news_posts").select("*, image_url").order("date_posted", desc=True).execute()
+    news_resp = supabase.table("news_posts").select("*").order("date_posted", desc=True).execute()
     news_items = news_resp.data or []
     return render_template("admin/news/index.html", news_items=news_items)
 
@@ -331,14 +242,6 @@ def admin_create_news():
         title = request.form.get("title")
         content = request.form.get("content")
         is_active = bool(request.form.get("is_active"))
-        image_file = request.files.get("image")
-        image_url = None
-
-        if image_file:
-            image_url = upload_to_supabase_storage(image_file, "news-and-events-images")
-            if not image_url:
-                flash("Image upload failed. Please try again.", "danger")
-                return render_template("admin/news/create.html")
 
         data = {
             "title": title,
@@ -346,7 +249,6 @@ def admin_create_news():
             "is_active": is_active,
             "created_by": current_user.id,
             "date_posted": get_manila_time().isoformat(),
-            "image_url": image_url,
         }
 
         supabase.table("news_posts").insert(data).execute()
@@ -360,7 +262,7 @@ def admin_create_news():
 @app.route("/admin/news/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def admin_edit_news(id):
-    resp = supabase.table("news_posts").select("*, image_url").eq("id", id).single().execute()
+    resp = supabase.table("news_posts").select("*").eq("id", id).single().execute()
     news = resp.data
 
     if not news:
@@ -371,29 +273,12 @@ def admin_edit_news(id):
         title = request.form.get("title")
         content = request.form.get("content")
         is_active = bool(request.form.get("is_active"))
-        image_file = request.files.get("image")
-        remove_image = request.form.get("remove_image") == "true"
-        old_image_url = news.get("image_url")
 
         update_data = {
             "title": title,
             "content": content,
             "is_active": is_active,
         }
-
-        if remove_image:
-            if old_image_url:
-                delete_from_supabase_storage(old_image_url, "news-and-events-images")
-            update_data["image_url"] = None
-        elif image_file:
-            if old_image_url:
-                delete_from_supabase_storage(old_image_url, "news-and-events-images")
-            new_image_url = upload_to_supabase_storage(image_file, "news-and-events-images")
-            if new_image_url:
-                update_data["image_url"] = new_image_url
-            else:
-                flash("Image upload failed. Please try again.", "danger")
-                return render_template("admin/news/edit.html", news=news)
 
         supabase.table("news_posts").update(update_data).eq("id", id).execute()
 
@@ -406,13 +291,6 @@ def admin_edit_news(id):
 @app.route("/admin/news/delete/<int:id>", methods=["POST"])
 @login_required
 def admin_delete_news(id):
-    # Fetch the news item to get its image_url before deleting
-    resp = supabase.table("news_posts").select("image_url").eq("id", id).single().execute()
-    news_data = resp.data
-
-    if news_data and news_data.get("image_url"):
-        delete_from_supabase_storage(news_data["image_url"], "news-and-events-images")
-
     supabase.table("news_posts").delete().eq("id", id).execute()
     flash("News item deleted successfully!", "success")
     return redirect(url_for("admin_news"))
