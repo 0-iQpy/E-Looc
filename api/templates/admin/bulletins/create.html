@@ -10,7 +10,7 @@
   </div>
   <div class="card">
     <div class="card-body">
-      <form action="{{ url_for('admin_create_bulletin') }}" method="POST">
+      <form action="{{ url_for('admin_create_bulletin') }}" method="POST" enctype="multipart/form-data">
         <div class="mb-3">
           <label for="title" class="form-label">Title</label>
           <input type="text" class="form-control" id="title" name="title" required>
@@ -19,7 +19,16 @@
       <label for="content" class="form-label">Content</label>
       <textarea class="form-control" id="content" name="content" rows="6" required></textarea>
     </div>
-    
+    <div class="mb-3">
+      <label for="image" class="form-label">Image (Optional)</label>
+      <input
+        type="file"
+        class="form-control"
+        id="image"
+        name="image"
+        accept="image/jpeg,image/jpg,image/png"
+      />
+    </div>
     <div class="mb-3 form-check">
       <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
       <label class="form-check-label" for="is_active">Active</label>

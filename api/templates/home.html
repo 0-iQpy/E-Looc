@@ -191,6 +191,9 @@
     <div class="bulletin-cards" id="bulletin-cards">
         {% for bulletin in bulletins %}
         <div class="card">
+            {% if bulletin.image_url %}
+                <img src="{{ bulletin.image_url }}" alt="{{ bulletin.title }} Image" style="width:100%; max-height:300px; object-fit: cover; margin-bottom: 10px;">
+            {% endif %}
             <h3>{{ bulletin.title }}</h3>
             <small><i class="far fa-calendar-alt"></i> {{ bulletin.date_posted | datetimeformat  }}
 </small>
@@ -205,6 +208,9 @@
     <div class="bulletin-cards">
         {% for news_item in news %}
         <div class="card">
+            {% if news_item.image_url %}
+                <img src="{{ news_item.image_url }}" alt="{{ news_item.title }} Image" style="width:100%; max-height:300px; object-fit: cover; margin-bottom: 10px;">
+            {% endif %}
             <h3>{{ news_item.title }}</h3>
             <small><i class="far fa-calendar-alt"></i> {{ news_item.date_posted | datetimeformat }}
 </small>
