@@ -90,6 +90,10 @@ def delete_from_supabase_storage(image_url, bucket_name):
             return False # Already False, but explicit
 
         filename = parts[1]
+        if '?' in filename:
+            app.logger.info(f"Original filename with query parameter: '{filename}'")
+            filename = filename.split('?')[0]
+            app.logger.info(f"Cleaned filename: '{filename}'")
         app.logger.info(f"Extracted filename: '{filename}'")
 
         app.logger.info(f"Attempting Supabase storage.from_('{bucket_name}').remove(['{filename}'])")
