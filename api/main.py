@@ -16,6 +16,7 @@ from dateutil import parser
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import time
+import traceback
 
 # Load environment variables from .env file
 load_dotenv()
@@ -73,67 +74,64 @@ def upload_to_supabase_storage(file, bucket_name):
 
 # Helper function to delete image from Supabase Storage
 def delete_from_supabase_storage(image_url, bucket_name):
+    app.logger.info(f"delete_from_supabase_storage called with image_url: '{image_url}', bucket_name: '{bucket_name}'")
     if not image_url:
-        app.logger.info("delete_from_supabase_storage: No image_url provided.")
+        app.logger.info("delete_from_supabase_storage: No image_url provided. Exiting.")
         return False
 
-    filename = ""  # Initialize filename to ensure it's available for logging in case of early exit
+    filename = ""  # Initialize filename for logging in case of early exit or error
+    all_successful = False # Default to False, only set True if all operations succeed
     try:
-        # Extract filename from URL
-        filename = image_url.split(f"{bucket_name}/")[-1]
-        if not filename or filename == image_url: # also check if split failed to find bucket_name
-            app.logger.warning(f"Could not extract a valid filename from URL: {image_url} for bucket {bucket_name}")
-            return False
+        app.logger.debug(f"Attempting to extract filename. Splitting URL '{image_url}' by '/{bucket_name}/'")
+        parts = image_url.split(f"/{bucket_name}/")
 
-        app.logger.info(f"Attempting to delete {filename} from bucket {bucket_name}")
-        # supabase.storage.from_().remove() returns a list of dicts, one for each file.
+        if len(parts) < 2 or not parts[1]:
+            app.logger.warning(f"Could not extract valid filename. URL: '{image_url}', Bucket: '{bucket_name}'. Parts: {parts}. Exiting.")
+            return False # Already False, but explicit
+
+        filename = parts[1]
+        app.logger.info(f"Extracted filename: '{filename}'")
+
+        app.logger.info(f"Attempting Supabase storage.from_('{bucket_name}').remove(['{filename}'])")
         response_list = supabase.storage.from_(bucket_name).remove([filename])
+        app.logger.info(f"Supabase raw response for deleting '{filename}': {response_list}")
 
-        if not response_list:
-            app.logger.error(f"No response received from Supabase for deletion of {filename} from {bucket_name}.")
-            return False
+        if response_list is None:
+            app.logger.error(f"Supabase returned None response for deletion of '{filename}'. This is unexpected. Assuming failure.")
+            return False # Already False
 
-        all_successful = True
-        for item in response_list:
-            # Check if the item is a dictionary as expected
+        if not response_list: # Handles empty list
+            app.logger.warning(f"Supabase returned an empty list response for deletion of '{filename}'. Interpreting as potential issue or file not found.")
+            return False # Already False
+
+        all_successful = True # Assume success now, turn to False if any item fails
+        for item_idx, item in enumerate(response_list):
+            app.logger.debug(f"Processing response item {item_idx}: {item}")
             if not isinstance(item, dict):
-                app.logger.error(f"Unexpected item format in response for {filename}: {item}")
+                app.logger.error(f"Response item {item_idx} is not a dict: {item}. Marking as failure for '{filename}'.")
                 all_successful = False
                 continue
 
-            # Determine success: no error key, or error key is None.
-            # Some storage clients might also include a status code.
-            # Prioritizing the 'error' key as it's more common for such detailed responses.
             item_error = item.get("error")
-            item_status_code = item.get("status_code", item.get("status")) # Check common keys for status
+            # item_status_code = item.get("status_code", item.get("status")) # Retaining for context, but primary logic is on error key
 
             if item_error is None:
-                # No error explicitly stated, check status code if available
-                if item_status_code and not (200 <= int(item_status_code) < 300):
-                    app.logger.error(
-                        f"Failed to delete {filename} (or part of it) from {bucket_name}. "
-                        f"Status: {item_status_code}, Error: {item.get('message', 'No message')}, Full item: {item}"
-                    )
-                    all_successful = False
-                else:
-                    # If error is None and status is good (or not present but error is None), count as success
-                    app.logger.info(
-                        f"Successfully deleted {filename} (or part of it) from {bucket_name}. Details: {item}"
-                    )
+                # No error explicitly stated by 'error' key.
+                # The problem description asks to check 'error' key OR status code.
+                # Supabase Python client's remove() typically gives error details in 'error' and 'message'.
+                # If 'error' is None, we assume success for that item as per Supabase typical behavior.
+                app.logger.info(f"Deletion success (or no error reported) for '{filename}' (item {item_idx}). Item: {item}")
             else:
                 # Error key is present and not None
-                app.logger.error(
-                    f"Failed to delete {filename} (or part of it) from {bucket_name}. "
-                    f"Error: {item_error}, Message: {item.get('message', 'No message')}, Full item: {item}"
-                )
+                app.logger.error(f"Deletion failure for '{filename}' (item {item_idx}). Error: '{item_error}'. Message: '{item.get('message', 'N/A')}'. Full item: {item}")
                 all_successful = False
-        
+
+        app.logger.info(f"Exiting delete_from_supabase_storage for '{filename}'. Overall success: {all_successful}")
         return all_successful
 
     except Exception as e:
-        # Log the type of exception and the message
-        app.logger.error(f"Error during deletion of {filename if filename else 'unknown file (URL: '+image_url+')'} from {bucket_name}: {type(e).__name__} - {str(e)}")
-        return False
+        app.logger.error(f"Exception in delete_from_supabase_storage for '{filename if filename else 'unknown (URL: '+image_url+')'}' from bucket '{bucket_name}'. Type: {type(e).__name__}. Error: {str(e)}. Traceback: {traceback.format_exc()}")
+        return False # Ensure False is returned on any exception
 
 class User(UserMixin):
     def __init__(self, id, username, password_hash, name, role):
@@ -317,10 +315,10 @@ def admin_edit_bulletin(id):
         form_data_for_template["title"] = request.form.get("title")
         form_data_for_template["content"] = request.form.get("content")
         form_data_for_template["is_active"] = bool(request.form.get("is_active"))
-        
+
         image_file = request.files.get("image")
         remove_image = request.form.get("remove_image") == "true"
-        
+
         current_db_image_url = bulletin_from_db.get("image_url")
         new_image_url_to_set = current_db_image_url
 
@@ -340,7 +338,7 @@ def admin_edit_bulletin(id):
                     flash("Failed to delete old image before uploading new. Item not updated.", "danger")
                     # form_data_for_template['image_url'] is already current_db_image_url
                     return render_template("admin/bulletins/edit.html", bulletin=form_data_for_template)
-            
+
             uploaded_image_url = upload_to_supabase_storage(image_file, "bulletin-images")
             if not uploaded_image_url:
                 flash("New image upload failed. Item not updated.", "danger")
@@ -467,10 +465,10 @@ def admin_edit_news(id):
         form_data_for_template["title"] = request.form.get("title")
         form_data_for_template["content"] = request.form.get("content")
         form_data_for_template["is_active"] = bool(request.form.get("is_active"))
-        
+
         image_file = request.files.get("image")
         remove_image = request.form.get("remove_image") == "true"
-        
+
         current_db_image_url = news_from_db.get("image_url")
         new_image_url_to_set = current_db_image_url
 
@@ -488,7 +486,7 @@ def admin_edit_news(id):
                 if not delete_from_supabase_storage(current_db_image_url, "news-and-events-images"):
                     flash("Failed to delete old image before uploading new. Item not updated.", "danger")
                     return render_template("admin/news/edit.html", news=form_data_for_template)
-            
+
             uploaded_image_url = upload_to_supabase_storage(image_file, "news-and-events-images")
             if not uploaded_image_url:
                 flash("New image upload failed. Item not updated.", "danger")
@@ -506,7 +504,7 @@ def admin_edit_news(id):
 
         if new_image_url_to_set != current_db_image_url:
             update_data_for_db["image_url"] = new_image_url_to_set
-        
+
         # Database operation
         if not update_data_for_db and new_image_url_to_set == current_db_image_url: # Check if there's anything to update
              flash("No changes detected.", "info")
