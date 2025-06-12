@@ -127,7 +127,7 @@ def delete_from_supabase_storage(image_url, bucket_name):
                     f"Error: {item_error}, Message: {item.get('message', 'No message')}, Full item: {item}"
                 )
                 all_successful = False
-
+        
         return all_successful
 
     except Exception as e:
@@ -299,47 +299,90 @@ def admin_create_bulletin():
 @app.route("/admin/bulletins/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def admin_edit_bulletin(id):
-    resp = supabase.table("bulletin_posts").select("*, image_url").eq("id", id).single().execute()
-    bulletin = resp.data
+    try:
+        resp = supabase.table("bulletin_posts").select("*, image_url").eq("id", id).single().execute()
+        bulletin_from_db = resp.data
+    except Exception as e:
+        app.logger.error(f"Error fetching bulletin id {id} for edit: {type(e).__name__} - {str(e)}")
+        flash(f"An error occurred while fetching bulletin details.", "danger")
+        return redirect(url_for("admin_bulletins"))
 
-    if not bulletin:
+    if not bulletin_from_db:
         flash("Bulletin not found", "danger")
         return redirect(url_for("admin_bulletins"))
 
+    form_data_for_template = bulletin_from_db.copy() # Use a copy for form data
+
     if request.method == "POST":
-        title = request.form.get("title")
-        content = request.form.get("content")
-        is_active = bool(request.form.get("is_active"))
+        form_data_for_template["title"] = request.form.get("title")
+        form_data_for_template["content"] = request.form.get("content")
+        form_data_for_template["is_active"] = bool(request.form.get("is_active"))
+        
         image_file = request.files.get("image")
         remove_image = request.form.get("remove_image") == "true"
-        old_image_url = bulletin.get("image_url")
+        
+        current_db_image_url = bulletin_from_db.get("image_url")
+        new_image_url_to_set = current_db_image_url
 
-        update_data = {
-            "title": title,
-            "content": content,
-            "is_active": is_active,
+        # Image handling logic
+        if remove_image:
+            if current_db_image_url:
+                if not delete_from_supabase_storage(current_db_image_url, "bulletin-images"):
+                    flash("Failed to delete the current image. Item not updated.", "danger")
+                    # form_data_for_template['image_url'] is already current_db_image_url
+                    return render_template("admin/bulletins/edit.html", bulletin=form_data_for_template)
+                new_image_url_to_set = None
+            else: # No image to remove
+                new_image_url_to_set = None
+        elif image_file and image_file.filename: # Check filename to ensure a file was actually uploaded
+            if current_db_image_url:
+                if not delete_from_supabase_storage(current_db_image_url, "bulletin-images"):
+                    flash("Failed to delete old image before uploading new. Item not updated.", "danger")
+                    # form_data_for_template['image_url'] is already current_db_image_url
+                    return render_template("admin/bulletins/edit.html", bulletin=form_data_for_template)
+            
+            uploaded_image_url = upload_to_supabase_storage(image_file, "bulletin-images")
+            if not uploaded_image_url:
+                flash("New image upload failed. Item not updated.", "danger")
+                # form_data_for_template['image_url'] is already current_db_image_url
+                return render_template("admin/bulletins/edit.html", bulletin=form_data_for_template)
+            new_image_url_to_set = uploaded_image_url
+
+        form_data_for_template["image_url"] = new_image_url_to_set
+
+        # Prepare data for DB update
+        update_data_for_db = {
+            "title": form_data_for_template["title"],
+            "content": form_data_for_template["content"],
+            "is_active": form_data_for_template["is_active"],
         }
 
-        if remove_image:
-            if old_image_url:
-                delete_from_supabase_storage(old_image_url, "bulletin-images")
-            update_data["image_url"] = None
-        elif image_file:
-            if old_image_url:
-                delete_from_supabase_storage(old_image_url, "bulletin-images")
-            new_image_url = upload_to_supabase_storage(image_file, "bulletin-images")
-            if new_image_url:
-                update_data["image_url"] = new_image_url
-            else:
-                flash("Image upload failed. Please try again.", "danger")
-                return render_template("admin/bulletins/edit.html", bulletin=bulletin)
+        if new_image_url_to_set != current_db_image_url:
+            update_data_for_db["image_url"] = new_image_url_to_set
 
-        supabase.table("bulletin_posts").update(update_data).eq("id", id).execute()
+        # Database operation
+        if not update_data_for_db and new_image_url_to_set == current_db_image_url : # Check if there's anything to update
+             flash("No changes detected.", "info")
+             return redirect(url_for("admin_bulletins"))
 
-        flash("Bulletin updated successfully!", "success")
-        return redirect(url_for("admin_bulletins"))
+        try:
+            response = supabase.table("bulletin_posts").update(update_data_for_db).eq("id", id).execute()
+            # Supabase Python client typically raises an exception for HTTP errors (4xx, 5xx)
+            # but we can add a check for data if needed, though often an empty response.data on UPDATE is normal.
+            if hasattr(response, 'error') and response.error:
+                 app.logger.error(f"Supabase API error updating bulletin {id}: {response.error}")
+                 flash(f"Database update failed: {response.error.message}", "danger")
+                 return render_template("admin/bulletins/edit.html", bulletin=form_data_for_template)
 
-    return render_template("admin/bulletins/edit.html", bulletin=bulletin)
+            flash("Bulletin updated successfully!", "success")
+            return redirect(url_for("admin_bulletins"))
+        except Exception as e:
+            app.logger.error(f"Error updating bulletin {id} in DB: {type(e).__name__} - {str(e)}")
+            flash(f"An unexpected error occurred while updating the bulletin: {str(e)}", "danger")
+            return render_template("admin/bulletins/edit.html", bulletin=form_data_for_template)
+
+    # For GET request
+    return render_template("admin/bulletins/edit.html", bulletin=form_data_for_template)
 
 
 @app.route("/admin/bulletins/delete/<int:id>", methods=["POST"])
@@ -406,47 +449,85 @@ def admin_create_news():
 @app.route("/admin/news/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def admin_edit_news(id):
-    resp = supabase.table("news_posts").select("*, image_url").eq("id", id).single().execute()
-    news = resp.data
+    try:
+        resp = supabase.table("news_posts").select("*, image_url").eq("id", id).single().execute()
+        news_from_db = resp.data
+    except Exception as e:
+        app.logger.error(f"Error fetching news item id {id} for edit: {type(e).__name__} - {str(e)}")
+        flash(f"An error occurred while fetching news item details.", "danger")
+        return redirect(url_for("admin_news"))
 
-    if not news:
+    if not news_from_db:
         flash("News item not found", "danger")
         return redirect(url_for("admin_news"))
 
+    form_data_for_template = news_from_db.copy() # Use a copy for form data
+
     if request.method == "POST":
-        title = request.form.get("title")
-        content = request.form.get("content")
-        is_active = bool(request.form.get("is_active"))
+        form_data_for_template["title"] = request.form.get("title")
+        form_data_for_template["content"] = request.form.get("content")
+        form_data_for_template["is_active"] = bool(request.form.get("is_active"))
+        
         image_file = request.files.get("image")
         remove_image = request.form.get("remove_image") == "true"
-        old_image_url = news.get("image_url")
+        
+        current_db_image_url = news_from_db.get("image_url")
+        new_image_url_to_set = current_db_image_url
 
-        update_data = {
-            "title": title,
-            "content": content,
-            "is_active": is_active,
+        # Image handling logic
+        if remove_image:
+            if current_db_image_url:
+                if not delete_from_supabase_storage(current_db_image_url, "news-and-events-images"):
+                    flash("Failed to delete the current image. Item not updated.", "danger")
+                    return render_template("admin/news/edit.html", news=form_data_for_template)
+                new_image_url_to_set = None
+            else: # No image to remove
+                new_image_url_to_set = None
+        elif image_file and image_file.filename: # Check filename to ensure a file was actually uploaded
+            if current_db_image_url:
+                if not delete_from_supabase_storage(current_db_image_url, "news-and-events-images"):
+                    flash("Failed to delete old image before uploading new. Item not updated.", "danger")
+                    return render_template("admin/news/edit.html", news=form_data_for_template)
+            
+            uploaded_image_url = upload_to_supabase_storage(image_file, "news-and-events-images")
+            if not uploaded_image_url:
+                flash("New image upload failed. Item not updated.", "danger")
+                return render_template("admin/news/edit.html", news=form_data_for_template)
+            new_image_url_to_set = uploaded_image_url
+
+        form_data_for_template["image_url"] = new_image_url_to_set
+
+        # Prepare data for DB update
+        update_data_for_db = {
+            "title": form_data_for_template["title"],
+            "content": form_data_for_template["content"],
+            "is_active": form_data_for_template["is_active"],
         }
 
-        if remove_image:
-            if old_image_url:
-                delete_from_supabase_storage(old_image_url, "news-and-events-images")
-            update_data["image_url"] = None
-        elif image_file:
-            if old_image_url:
-                delete_from_supabase_storage(old_image_url, "news-and-events-images")
-            new_image_url = upload_to_supabase_storage(image_file, "news-and-events-images")
-            if new_image_url:
-                update_data["image_url"] = new_image_url
-            else:
-                flash("Image upload failed. Please try again.", "danger")
-                return render_template("admin/news/edit.html", news=news)
+        if new_image_url_to_set != current_db_image_url:
+            update_data_for_db["image_url"] = new_image_url_to_set
+        
+        # Database operation
+        if not update_data_for_db and new_image_url_to_set == current_db_image_url: # Check if there's anything to update
+             flash("No changes detected.", "info")
+             return redirect(url_for("admin_news"))
 
-        supabase.table("news_posts").update(update_data).eq("id", id).execute()
+        try:
+            response = supabase.table("news_posts").update(update_data_for_db).eq("id", id).execute()
+            if hasattr(response, 'error') and response.error:
+                 app.logger.error(f"Supabase API error updating news item {id}: {response.error}")
+                 flash(f"Database update failed: {response.error.message}", "danger")
+                 return render_template("admin/news/edit.html", news=form_data_for_template)
 
-        flash("News & Events updated successfully!", "success")
-        return redirect(url_for("admin_news"))
+            flash("News & Events updated successfully!", "success")
+            return redirect(url_for("admin_news"))
+        except Exception as e:
+            app.logger.error(f"Error updating news item {id} in DB: {type(e).__name__} - {str(e)}")
+            flash(f"An unexpected error occurred while updating the news item: {str(e)}", "danger")
+            return render_template("admin/news/edit.html", news=form_data_for_template)
 
-    return render_template("admin/news/edit.html", news=news)
+    # For GET request
+    return render_template("admin/news/edit.html", news=form_data_for_template)
 
 
 @app.route("/admin/news/delete/<int:id>", methods=["POST"])
