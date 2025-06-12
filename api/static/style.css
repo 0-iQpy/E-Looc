@@ -393,6 +393,15 @@ h1, h2, h3, h4, h5, h6 {
   transform: none !important;
 }
 
+.bulletin-cards .card img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  margin-top: 1rem;
+  margin-bottom: 0; /* Explicitly set bottom margin */
+  border-radius: var(--border-radius); /* Consistent with card look */
+}
+
 .card h3 {
   color: var(--primary-color);
   font-size: 1.2rem;
