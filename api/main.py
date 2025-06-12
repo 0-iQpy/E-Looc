@@ -74,28 +74,65 @@ def upload_to_supabase_storage(file, bucket_name):
 # Helper function to delete image from Supabase Storage
 def delete_from_supabase_storage(image_url, bucket_name):
     if not image_url:
+        app.logger.info("delete_from_supabase_storage: No image_url provided.")
         return False
+
+    filename = ""  # Initialize filename to ensure it's available for logging in case of early exit
     try:
         # Extract filename from URL
         filename = image_url.split(f"{bucket_name}/")[-1]
-        if not filename:
-            app.logger.warning(f"Could not extract filename from URL: {image_url}")
+        if not filename or filename == image_url: # also check if split failed to find bucket_name
+            app.logger.warning(f"Could not extract a valid filename from URL: {image_url} for bucket {bucket_name}")
             return False
 
         app.logger.info(f"Attempting to delete {filename} from bucket {bucket_name}")
-        response = supabase.storage.from_(bucket_name).remove([filename])
+        # supabase.storage.from_().remove() returns a list of dicts, one for each file.
+        response_list = supabase.storage.from_(bucket_name).remove([filename])
 
-        if 200 <= response.status_code < 300:
-            app.logger.info(f"Successfully deleted {filename} from {bucket_name}. Status: {response.status_code}")
-            return True
-        else:
-            app.logger.error(
-                f"Failed to delete {filename} from {bucket_name}. "
-                f"Status: {response.status_code}, Response: {response.text}"
-            )
+        if not response_list:
+            app.logger.error(f"No response received from Supabase for deletion of {filename} from {bucket_name}.")
             return False
+
+        all_successful = True
+        for item in response_list:
+            # Check if the item is a dictionary as expected
+            if not isinstance(item, dict):
+                app.logger.error(f"Unexpected item format in response for {filename}: {item}")
+                all_successful = False
+                continue
+
+            # Determine success: no error key, or error key is None.
+            # Some storage clients might also include a status code.
+            # Prioritizing the 'error' key as it's more common for such detailed responses.
+            item_error = item.get("error")
+            item_status_code = item.get("status_code", item.get("status")) # Check common keys for status
+
+            if item_error is None:
+                # No error explicitly stated, check status code if available
+                if item_status_code and not (200 <= int(item_status_code) < 300):
+                    app.logger.error(
+                        f"Failed to delete {filename} (or part of it) from {bucket_name}. "
+                        f"Status: {item_status_code}, Error: {item.get('message', 'No message')}, Full item: {item}"
+                    )
+                    all_successful = False
+                else:
+                    # If error is None and status is good (or not present but error is None), count as success
+                    app.logger.info(
+                        f"Successfully deleted {filename} (or part of it) from {bucket_name}. Details: {item}"
+                    )
+            else:
+                # Error key is present and not None
+                app.logger.error(
+                    f"Failed to delete {filename} (or part of it) from {bucket_name}. "
+                    f"Error: {item_error}, Message: {item.get('message', 'No message')}, Full item: {item}"
+                )
+                all_successful = False
+
+        return all_successful
+
     except Exception as e:
-        app.logger.error(f"Error deleting {filename if 'filename' in locals() else 'unknown file'} from Supabase: {e}")
+        # Log the type of exception and the message
+        app.logger.error(f"Error during deletion of {filename if filename else 'unknown file (URL: '+image_url+')'} from {bucket_name}: {type(e).__name__} - {str(e)}")
         return False
 
 class User(UserMixin):
