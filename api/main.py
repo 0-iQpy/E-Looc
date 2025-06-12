@@ -146,7 +146,8 @@ def index():
     bulletins = bulletins_resp.data or []
     news = news_resp.data or []
     manila_time = get_manila_time().strftime("%B %d, %Y %I:%M %p")
-    return render_template("home.html", bulletins=bulletins, news=news)
+    report_form_url = os.getenv('REPORT_FORM_URL', 'https://forms.gle/vbALkyz6zaZStF4k6')
+    return render_template("home.html", bulletins=bulletins, news=news, report_form_url=report_form_url)
 
 
 @app.route("/admin")
