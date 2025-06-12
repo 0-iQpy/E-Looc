@@ -364,6 +364,15 @@ h1, h2, h3, h4, h5, h6 {
   gap: 1.5rem;
 }
 
+/* Center placeholder text when no items are present */
+.bulletin-cards > p:only-child {
+    text-align: center;
+    width: 100%; /* Ensure it takes full width to center within the grid column */
+    grid-column: 1 / -1; /* Span all columns if the parent is a grid */
+    margin-top: 1rem; /* Optional: add some spacing */
+    margin-bottom: 1rem; /* Optional: add some spacing */
+}
+
 .card {
   background-color: var(--light-color);
   border-radius: var(--border-radius);
@@ -377,6 +386,11 @@ h1, h2, h3, h4, h5, h6 {
 .card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-hover);
+}
+
+/* Ensure images within .bulletin-cards .card do not scale on hover */
+.bulletin-cards .card:hover img {
+  transform: none !important;
 }
 
 .card h3 {
