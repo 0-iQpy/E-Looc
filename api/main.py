@@ -79,20 +79,23 @@ def delete_from_supabase_storage(image_url, bucket_name):
         # Extract filename from URL
         filename = image_url.split(f"{bucket_name}/")[-1]
         if not filename:
+            app.logger.warning(f"Could not extract filename from URL: {image_url}")
             return False
+
+        app.logger.info(f"Attempting to delete {filename} from bucket {bucket_name}")
         response = supabase.storage.from_(bucket_name).remove([filename])
-        if response.status_code == 200 and response.json(): # Check if deletion was successful
-             # Check if the first item in the response list (if any) indicates success
-            if response.json()[0].get('message') == 'Successfully removed':
-                return True
-            else:
-                app.logger.error(f"Supabase delete error response: {response.json()}")
-                return False
+
+        if 200 <= response.status_code < 300:
+            app.logger.info(f"Successfully deleted {filename} from {bucket_name}. Status: {response.status_code}")
+            return True
         else:
-            app.logger.error(f"Supabase delete error status {response.status_code}: {response.json()}")
+            app.logger.error(
+                f"Failed to delete {filename} from {bucket_name}. "
+                f"Status: {response.status_code}, Response: {response.text}"
+            )
             return False
     except Exception as e:
-        app.logger.error(f"Error deleting from Supabase: {e}")
+        app.logger.error(f"Error deleting {filename if 'filename' in locals() else 'unknown file'} from Supabase: {e}")
         return False
 
 class User(UserMixin):
@@ -229,11 +232,13 @@ def admin_create_bulletin():
         image_file = request.files.get("image")
         image_url = None
 
-        if image_file:
+        if image_file and image_file.filename: # Check if a file was provided
             image_url = upload_to_supabase_storage(image_file, "bulletin-images")
-            if not image_url:
+            if image_url is None: # Check if upload failed
                 flash("Image upload failed. Please try again.", "danger")
                 return render_template("admin/bulletins/create.html")
+        else:
+            image_url = None
 
 
         data = {
@@ -242,8 +247,9 @@ def admin_create_bulletin():
             "is_active": is_active,
             "created_by": current_user.id,
             "date_posted": get_manila_time().isoformat(),
-            "image_url": image_url,
         }
+        if image_url: # Only include image_url if it's not None
+            data["image_url"] = image_url
 
         supabase.table("bulletin_posts").insert(data).execute()
 
@@ -334,11 +340,13 @@ def admin_create_news():
         image_file = request.files.get("image")
         image_url = None
 
-        if image_file:
+        if image_file and image_file.filename: # Check if a file was provided
             image_url = upload_to_supabase_storage(image_file, "news-and-events-images")
-            if not image_url:
+            if image_url is None: # Check if upload failed
                 flash("Image upload failed. Please try again.", "danger")
                 return render_template("admin/news/create.html")
+        else:
+            image_url = None
 
         data = {
             "title": title,
@@ -346,8 +354,9 @@ def admin_create_news():
             "is_active": is_active,
             "created_by": current_user.id,
             "date_posted": get_manila_time().isoformat(),
-            "image_url": image_url,
         }
+        if image_url: # Only include image_url if it's not None
+            data["image_url"] = image_url
 
         supabase.table("news_posts").insert(data).execute()
 
