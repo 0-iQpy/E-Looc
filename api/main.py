@@ -77,65 +77,64 @@ def delete_from_supabase_storage(image_url, bucket_name):
     app.logger.info(f"delete_from_supabase_storage called with image_url: '{image_url}', bucket_name: '{bucket_name}'")
     if not image_url:
         app.logger.info("delete_from_supabase_storage: No image_url provided. Exiting.")
-        return False
+        return False # No URL, so nothing to delete, but not an error in deletion itself. Consider if True is better. For now, False.
 
-    filename = ""  # Initialize filename for logging in case of early exit or error
-    all_successful = False # Default to False, only set True if all operations succeed
+    filename = ""
     try:
         app.logger.debug(f"Attempting to extract filename. Splitting URL '{image_url}' by '/{bucket_name}/'")
         parts = image_url.split(f"/{bucket_name}/")
 
         if len(parts) < 2 or not parts[1]:
             app.logger.warning(f"Could not extract valid filename. URL: '{image_url}', Bucket: '{bucket_name}'. Parts: {parts}. Exiting.")
-            return False # Already False, but explicit
+            return False
 
         filename = parts[1]
-        if '?' in filename:
-            app.logger.info(f"Original filename with query parameter: '{filename}'")
+        if '?' in filename: # Remove query parameters if they exist
             filename = filename.split('?')[0]
-            app.logger.info(f"Cleaned filename: '{filename}'")
-        app.logger.info(f"Extracted filename: '{filename}'")
+        app.logger.info(f"Extracted filename for deletion: '{filename}'")
 
+        # Attempt to remove the file
         app.logger.info(f"Attempting Supabase storage.from_('{bucket_name}').remove(['{filename}'])")
         response_list = supabase.storage.from_(bucket_name).remove([filename])
         app.logger.info(f"Supabase raw response for deleting '{filename}': {response_list}")
 
         if response_list is None:
             app.logger.error(f"Supabase returned None response for deletion of '{filename}'. This is unexpected. Assuming failure.")
-            return False # Already False
+            return False
 
-        if not response_list: # Handles empty list
-            app.logger.warning(f"Supabase returned an empty list response for deletion of '{filename}'. Interpreting as potential issue or file not found.")
-            return False # Already False
-
-        all_successful = True # Assume success now, turn to False if any item fails
+        # Default to True. If response_list is empty (e.g., file not found, or simple success), it's a success.
+        # If there are items in response_list, we check them for errors.
+        deletion_successful = True
         for item_idx, item in enumerate(response_list):
-            app.logger.debug(f"Processing response item {item_idx}: {item}")
+            app.logger.debug(f"Processing response item {item_idx} for '{filename}': {item}")
             if not isinstance(item, dict):
-                app.logger.error(f"Response item {item_idx} is not a dict: {item}. Marking as failure for '{filename}'.")
-                all_successful = False
-                continue
+                app.logger.error(f"Response item {item_idx} for '{filename}' is not a dict: {item}. Marking as failure.")
+                deletion_successful = False
+                break # An invalid response item means we can't be sure, so flag as error
 
+            # Check for an error field within the item. Supabase often uses 'error' key.
+            # It could be None or an object.
             item_error = item.get("error")
-            # item_status_code = item.get("status_code", item.get("status")) # Retaining for context, but primary logic is on error key
-
-            if item_error is None:
-                # No error explicitly stated by 'error' key.
-                # The problem description asks to check 'error' key OR status code.
-                # Supabase Python client's remove() typically gives error details in 'error' and 'message'.
-                # If 'error' is None, we assume success for that item as per Supabase typical behavior.
-                app.logger.info(f"Deletion success (or no error reported) for '{filename}' (item {item_idx}). Item: {item}")
+            if item_error is not None: # If 'error' key exists and is not None, it's an error
+                app.logger.error(f"Deletion failure reported by Supabase for '{filename}' (item {item_idx}). Error: '{item_error}'. Message: '{item.get('message', 'N/A')}'. Full item: {item}")
+                deletion_successful = False
+                break # Single file deletion, one error means failure
             else:
-                # Error key is present and not None
-                app.logger.error(f"Deletion failure for '{filename}' (item {item_idx}). Error: '{item_error}'. Message: '{item.get('message', 'N/A')}'. Full item: {item}")
-                all_successful = False
+                # No 'error' key, or 'error' key is None. This is good.
+                # Check for 'message' field for more info, some supabase versions might put "Successfully deleted" or similar here
+                # item_message = item.get("message")
+                # item_status_code = item.get("status_code", item.get("status"))
+                # For now, the absence of an 'error' object is sufficient for success per item.
+                app.logger.info(f"No error reported in response item {item_idx} for '{filename}'. Assuming success for this item. Item: {item}")
 
-        app.logger.info(f"Exiting delete_from_supabase_storage for '{filename}'. Overall success: {all_successful}")
-        return all_successful
+        app.logger.info(f"Exiting delete_from_supabase_storage for '{filename}'. Overall success: {deletion_successful}")
+        return deletion_successful
 
     except Exception as e:
-        app.logger.error(f"Exception in delete_from_supabase_storage for '{filename if filename else 'unknown (URL: '+image_url+')'}' from bucket '{bucket_name}'. Type: {type(e).__name__}. Error: {str(e)}. Traceback: {traceback.format_exc()}")
-        return False # Ensure False is returned on any exception
+        # Log detailed error including filename if available
+        log_filename = filename if filename else f"unknown (URL: {image_url})"
+        app.logger.error(f"Exception in delete_from_supabase_storage for '{log_filename}' from bucket '{bucket_name}'. Type: {type(e).__name__}. Error: {str(e)}. Traceback: {traceback.format_exc()}")
+        return False
 
 class User(UserMixin):
     def __init__(self, id, username, password_hash, name, role):
