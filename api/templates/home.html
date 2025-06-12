@@ -198,7 +198,10 @@
                 <h3>{{ bulletin.title }}</h3>
                 <small><i class="far fa-calendar-alt"></i> {{ bulletin.date_posted | datetimeformat  }}
 </small>
-                <p>{{ bulletin.content }}</p>
+                <div class="card-content-wrapper">
+                    <p>{{ bulletin.content }}</p>
+                    <a href="#" class="see-more" style="display: none; cursor: pointer; color: var(--secondary-color); font-weight: 500; margin-top: 0.5rem; display: inline-block;">See more</a>
+                </div>
             </div>
             {% endfor %}
         {% else %}
@@ -219,7 +222,10 @@
                 <h3>{{ news_item.title }}</h3>
                 <small><i class="far fa-calendar-alt"></i> {{ news_item.date_posted | datetimeformat }}
 </small>
-                <p>{{ news_item.content }}</p>
+                <div class="card-content-wrapper">
+                    <p>{{ news_item.content }}</p>
+                    <a href="#" class="see-more" style="display: none; cursor: pointer; color: var(--secondary-color); font-weight: 500; margin-top: 0.5rem; display: inline-block;">See more</a>
+                </div>
             </div>
             {% endfor %}
         {% else %}
@@ -322,15 +328,114 @@
   </footer>
 
   <script>
-    // Bulletin and News card expansion
-    document.querySelectorAll(".bulletin-cards .card").forEach((card) => {
-      card.addEventListener("click", () => {
-        const parent = card.parentElement;
-        parent.querySelectorAll(".card").forEach((c) => c.classList.remove("expanded"));
-        card.classList.add("expanded");
-      });
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        const MAX_WORDS = 50;
 
+        document.querySelectorAll('.bulletin-cards .card').forEach(card => {
+            const contentWrapper = card.querySelector('.card-content-wrapper');
+            if (!contentWrapper) return;
+
+            const paragraph = contentWrapper.querySelector('p');
+            const seeMoreLink = contentWrapper.querySelector('.see-more');
+
+            if (!paragraph || !seeMoreLink) return;
+
+            // Store original full content
+            const originalFullHTML = paragraph.innerHTML;
+            const words = paragraph.textContent.trim().split(/\s+/);
+
+            let seeLessLink = null; // To store the "See less" link when created
+
+            function truncateText() {
+                const truncatedHTML = words.slice(0, MAX_WORDS).join(' ') + (words.length > MAX_WORDS ? '...' : '');
+                paragraph.innerHTML = truncatedHTML;
+                seeMoreLink.style.display = 'inline-block';
+                if (seeLessLink) seeLessLink.style.display = 'none';
+                card.classList.remove('expanded'); // Ensure card is not expanded when text is truncated
+            }
+
+            function showFullText() {
+                paragraph.innerHTML = originalFullHTML;
+                seeMoreLink.style.display = 'none';
+                if (words.length > MAX_WORDS) {
+                    if (!seeLessLink) {
+                        seeLessLink = document.createElement('a');
+                        seeLessLink.href = '#';
+                        seeLessLink.textContent = 'See less';
+                        seeLessLink.className = 'see-less'; // Add a class for styling if needed
+                        seeLessLink.style.cursor = 'pointer';
+                        seeLessLink.style.color = 'var(--secondary-color)';
+                        seeLessLink.style.fontWeight = '500';
+                        seeLessLink.style.marginTop = '0.5rem';
+                        seeLessLink.style.display = 'inline-block';
+                        seeMoreLink.parentNode.insertBefore(seeLessLink, seeMoreLink.nextSibling);
+
+                        seeLessLink.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            truncateText();
+                        });
+                    }
+                    seeLessLink.style.display = 'inline-block';
+                }
+
+                // Expand current card and collapse others in the same section
+                const parentBulletinCards = card.closest('.bulletin-cards');
+                if (parentBulletinCards) {
+                    parentBulletinCards.querySelectorAll('.card.expanded').forEach(expandedCard => {
+                        if (expandedCard !== card) {
+                            expandedCard.classList.remove('expanded');
+                            // Also reset other cards' text to truncated if they were expanded
+                            const otherContentWrapper = expandedCard.querySelector('.card-content-wrapper');
+                            if (otherContentWrapper) {
+                                const otherParagraph = otherContentWrapper.querySelector('p');
+                                const otherSeeMoreLink = otherContentWrapper.querySelector('.see-more');
+                                const otherWords = otherParagraph.textContent.trim().split(/\s+/); // Re-evaluate words for other cards
+                                 if (otherWords.length > MAX_WORDS) { // Only truncate if it was meant to be
+                                    const otherOriginalFullHTML = expandedCard.dataset.originalHTML; // Assuming we store it
+                                    if (otherOriginalFullHTML) { // Check if original HTML was stored
+                                        const otherTruncatedHTML = otherOriginalFullHTML.trim().split(/\s+/).slice(0, MAX_WORDS).join(' ') + '...';
+                                        otherParagraph.innerHTML = otherTruncatedHTML;
+                                        if(otherSeeMoreLink) otherSeeMoreLink.style.display = 'inline-block';
+                                        const otherSeeLessLink = otherContentWrapper.querySelector('.see-less');
+                                        if (otherSeeLessLink) otherSeeLessLink.style.display = 'none';
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                card.classList.add('expanded');
+            }
+
+            // Initial setup
+            if (words.length > MAX_WORDS) {
+                // Store original HTML in a data attribute to retrieve for other cards when they collapse
+                card.dataset.originalHTML = originalFullHTML;
+                truncateText();
+                seeMoreLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showFullText();
+                });
+            } else {
+                seeMoreLink.style.display = 'none'; // No need for "See more" if content is short
+            }
+        });
+
+        // Remove or modify the old card click listener
+        // The old listener:
+        // document.querySelectorAll(".bulletin-cards .card").forEach((card) => {
+        //   card.addEventListener("click", () => {
+        //     const parent = card.parentElement;
+        //     parent.querySelectorAll(".card").forEach((c) => c.classList.remove("expanded"));
+        //     card.classList.add("expanded");
+        //   });
+        // });
+        // We will remove this. If it's in a separate script block, it needs to be found and removed.
+        // If it's part of a larger script block, it needs to be commented out or deleted.
+        // For this subtask, assume it's the one directly visible in the provided home.html snippet.
+    });
+  </script>
+  <script>
     // FAQ toggle
     document.querySelectorAll(".faq-question").forEach((question) => {
       question.addEventListener("click", () => {

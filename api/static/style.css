@@ -416,7 +416,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card.expanded {
-  grid-column: span 2;
+  grid-column: 1 / -1;
+  width: 100%;
   background-color: #e6f7ff;
 }
 
