@@ -192,9 +192,6 @@
         {% if bulletins %}
             {% for bulletin in bulletins %}
             <div class="card">
-                {% if bulletin.image_url %}
-                    <img src="{{ bulletin.image_url }}" alt="{{ bulletin.title }} Image" style="width:100%; max-height:300px; object-fit: cover; margin-bottom: 10px;">
-                {% endif %}
                 <h3>{{ bulletin.title }}</h3>
                 <small><i class="far fa-calendar-alt"></i> {{ bulletin.date_posted | datetimeformat  }}
 </small>
@@ -202,7 +199,10 @@
                     <p>{{ bulletin.content }}</p>
                     <a href="#" class="see-more" style="display: none; cursor: pointer; color: var(--secondary-color); font-weight: 500; margin-top: 0.5rem; display: inline-block;">See more</a>
                 </div>
-            </div>
+                {% if bulletin.image_url %}
+                    <img src="{{ bulletin.image_url }}" alt="{{ bulletin.title }} Image">
+                {% endif %}
+                </div>
             {% endfor %}
         {% else %}
             <p>No bulletins at the moment. Please check back later!</p>
@@ -216,9 +216,6 @@
         {% if news %}
             {% for news_item in news %}
             <div class="card">
-                {% if news_item.image_url %}
-                    <img src="{{ news_item.image_url }}" alt="{{ news_item.title }} Image" style="width:100%; max-height:300px; object-fit: cover; margin-bottom: 10px;">
-                {% endif %}
                 <h3>{{ news_item.title }}</h3>
                 <small><i class="far fa-calendar-alt"></i> {{ news_item.date_posted | datetimeformat }}
 </small>
@@ -226,6 +223,9 @@
                     <p>{{ news_item.content }}</p>
                     <a href="#" class="see-more" style="display: none; cursor: pointer; color: var(--secondary-color); font-weight: 500; margin-top: 0.5rem; display: inline-block;">See more</a>
                 </div>
+              {% if news_item.image_url %}
+                    <img src="{{ news_item.image_url }}" alt="{{ news_item.title }} Image" style="width:100%; max-height:300px; object-fit: cover; margin-bottom: 10px;">
+              {% endif %}
             </div>
             {% endfor %}
         {% else %}
@@ -328,7 +328,7 @@
   </footer>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
         const MAX_WORDS = 50;
 
         document.querySelectorAll('.bulletin-cards .card').forEach(card => {
@@ -377,7 +377,7 @@
                     }
                     seeLessLink.style.display = 'inline-block';
                 }
-
+                
                 // Expand current card and collapse others in the same section
                 const parentBulletinCards = card.closest('.bulletin-cards');
                 if (parentBulletinCards) {
@@ -410,7 +410,7 @@
             // Initial setup
             if (words.length > MAX_WORDS) {
                 // Store original HTML in a data attribute to retrieve for other cards when they collapse
-                card.dataset.originalHTML = originalFullHTML;
+                card.dataset.originalHTML = originalFullHTML; 
                 truncateText();
                 seeMoreLink.addEventListener('click', function(e) {
                     e.preventDefault();
