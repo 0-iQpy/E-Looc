@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>E-Looc - Barangay Looc Official Website</title>
+
+  <meta name="title" content="E-Looc" />
+  <meta name="description" content="Welcome to the Brgy. Looc Website" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://e-looc.vercel.app/" />
+  <meta property="og:title" content="E-Looc" />
+  <meta property="og:description" content="Welcome to the Brgy. Looc Website" />
+  <meta property="og:site_name" content="E-Looc">
+  <meta property="og:image" content="https://e-looc.vercel.app/static/img/preview.png" />
+  <meta property="twitter:url" content="https://e-looc.vercel.app/" />
+  <meta property="twitter:title" content="E-Looc" />
+  <meta property="twitter:description" content="Welcome to the Brgy. Looc Website" />
+  <meta property="twitter:image" content="https://e-looc.vercel.app/static/img/preview.png" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="icon" type="image/x-icon" href="/static/looc.svg">
+  <link
+    rel="stylesheet"
+    type="text/css"
+    media="screen"
+    href="/static/style.css"
+  />
+</head>
+
+<body>
+  <header class="header">
+    <div class="logo">
+      <img src="/static/bagong-pilipinas.svg" alt="Bagong Pilipinas Logo" />
+      <img src="/static/calamba.svg" alt="Calamba Logo" />
+      <img src="/static/ccc.svg" alt="CCC Logo" />
+      <img src="/static/looc.svg" alt="Barangay Looc Logo" />
+    </div>
+    <nav class="navbar">
+      <input type="checkbox" id="menu-toggle" class="menu-toggle" />
+      <label for="menu-toggle" class="menu-icon">
+        <i class="fas fa-bars"></i>
+        <i class="fas fa-times"></i>
+      </label>
+      <div class="menu-backdrop"></div>
+      <div class="nav-links">
+        <a href="#home" class="active">Home</a>
+        <a href="#services">Services</a>
+        <a href="#bulletin">Bulletin</a>
+        <a href="#news">News & Events</a>
+        <a href="#faqs">FAQs</a>
+        <a href="/credits" target="_blank">Credits</a>
+        <a href="/about">About</a>
+        <a
+          href="https://forms.gle/vbALkyz6zaZStF4k6"
+          target="_blank"
+          class="report-btn"
+          >Report <i class="fas fa-external-link-alt fa-xs" aria-hidden="true"></i></a
+        >
+      </div>
+    </nav>
+  </header>
+
+  <main id="home" class="main-content">
+    <div class="hero-section">
+      <div class="logo-container">
+        <img src="/static/calamba.svg" alt="Calamba City Logo" />
+        <img src="/static/looc.svg" alt="Barangay Looc Logo" />
+      </div>
+      <h1>Barangay Looc</h1>
+      <p>Calamba City, Laguna</p>
+      <a href="#services" class="cta-button">Our Services</a>
+    </div>
+  </main>
+
+  <div id="services" class="section services-container">
+    <h2>Our Services</h2>
+    <div class="services">
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/static/certificate.svg" alt="Certificates" />
+        </div>
+        <h3>Certificates and IDs</h3>
+        <p>
+          Services on how to get Barangay Clearance, Cedula, Certificate of Indigency, and Certificate of Residency.
+        </p>
+        <a href="https://forms.gle/a81zCXV77ToUt1ah6" target="_blank" class="service-link">Learn More <i class="fas fa-external-link-alt fa-xs" aria-hidden="true"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/static/business.svg" alt="Certificates" />
+        </div>
+        <h3>Business Permit</h3>
+        <p>
+          Services on how to get Barangay Business Permit.
+        </p>
+        <a href="https://forms.gle/e87NvfxsRbXnkexG8" target="_blank" class="service-link">Learn More <i class="fas fa-external-link-alt fa-xs" aria-hidden="true"></i></a>
+      </div>
+
+      <!--<div class="service-card">
+        <div class="service-icon">
+          <img src="e-icon.png" alt="Education" />
+        </div>
+        <h3>Education</h3>
+        <p>Services on enrollment to local schools and daycare centers.</p>
+        <a href="#" class="service-link">Learn More</a>
+      </div>-->
+
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/static/risk.svg" alt="Disaster" />
+        </div>
+        <h3>Disaster and Risk</h3>
+        <p>Services on weather and disaster management. (Coming Soon)</p>
+        <a href="#services-coming-soon" class="service-link">Learn More</a>
+      </div>
+
+      <!--<div class="service-card">
+        <div class="service-icon">
+          <img src="projects-icon.png" alt="Projects" />
+        </div>
+        <h3>Projects</h3>
+        <p>Services on upcoming projects of the Barangay.</p>
+        <a href="#" class="service-link">Learn More</a>
+      </div>-->
+
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/static/senior.svg" alt="Senior Citizens" />
+        </div>
+        <h3>Senior Citizens</h3>
+        <p>
+          Providing care, support, and essential services for the well-being of
+          senior citizens. (Coming Soon)
+        </p>
+        <a href="#services-coming-soon" class="service-link">Learn More</a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/static/pwd.svg" alt="Person With Disabilities" />
+        </div>
+        <h3>Person With Disabilities</h3>
+        <p>
+          Providing care, support, and essential services for the well-being of
+          Person With Disabilities.
+        </p>
+        <a href="https://forms.gle/tXCeyXd5mFTT2p4F7" target="_blank" class="service-link">Learn More <i class="fas fa-external-link-alt fa-xs" aria-hidden="true"></i></a>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/static/vawc.svg" alt="VAWC" />
+        </div>
+        <h3>VAWC</h3>
+        <p>
+          Support, protection, and services for victims of violence against women
+          and children. (Coming Soon)
+        </p>
+        <a href="#services-coming-soon" class="service-link">Learn More</a>
+      </div>
+
+      <!--<div class="service-card">
+        <div class="service-icon">
+          <img src="job-icon.png" alt="Job Hiring" />
+        </div>
+        <h3>Job Hiring</h3>
+        <p>
+          Providing opportunities through job hiring for career growth and
+          employment.
+        </p>
+        <a href="#" class="service-link">Learn More</a>
+      </div>-->
+    </div>
+  </div>
+
+  <div id="bulletin" class="section bulletin-container">
+    <h2>Bulletin Board</h2>
+    <div class="bulletin-cards" id="bulletin-cards">
+        {% if bulletins %}
+            {% for bulletin in bulletins %}
+            <div class="card">
+                <h3>{{ bulletin.title }}</h3>
+                <small><i class="far fa-calendar-alt"></i> {{ bulletin.date_posted | datetimeformat  }}
+</small>
+                <div class="card-content-wrapper">
+                    <p>{{ bulletin.content }}</p>
+                    <a href="#" class="see-more" style="display: none; cursor: pointer; color: var(--secondary-color); font-weight: 500; margin-top: 0.5rem; display: inline-block;">See more</a>
+                </div>
+                {% if bulletin.image_url %}
+                    <img src="{{ bulletin.image_url }}" alt="{{ bulletin.title }} Image">
+                {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No bulletins at the moment. Please check back later!</p>
+        {% endif %}
+    </div>
+</div>
+
+<div id="news" class="section bulletin-container">
+    <h2>News and Events</h2>
+    <div class="bulletin-cards">
+        {% if news %}
+            {% for news_item in news %}
+            <div class="card">
+                <h3>{{ news_item.title }}</h3>
+                <small><i class="far fa-calendar-alt"></i> {{ news_item.date_posted | datetimeformat }}
+</small>
+                <div class="card-content-wrapper">
+                    <p>{{ news_item.content }}</p>
+                    <a href="#" class="see-more" style="display: none; cursor: pointer; color: var(--secondary-color); font-weight: 500; margin-top: 0.5rem; display: inline-block;">See more</a>
+                </div>
+              {% if news_item.image_url %}
+                    <img src="{{ news_item.image_url }}" alt="{{ news_item.title }} Image" style="width:100%; max-height:300px; object-fit: cover; margin-bottom: 10px;">
+              {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No news and events to display at the moment. Please check back later!</p>
+        {% endif %}
+    </div>
+</div>
+
+
+  <div id="faqs" class="section faq-container">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-question">
+          <h3>How do I get a Barangay Clearance?</h3>
+          <span class="faq-toggle"><i class="fas fa-chevron-down"></i></span>
+        </div>
+        <div class="faq-answer">
+          <p>To obtain a Barangay Certificate, you need to:</p>
+          <ol>
+            <li>Visit the Barangay Hall during office hours (8AM-5PM, Monday to Friday)</li>
+            <li>Fill out the application form</li>
+            <li>Go to Barangay Hall and pay the processing fee (depends on the type of Barangay Certificate you want to obtain)</li>
+            <li>Wait for processing (usually within the same day)</li>
+          </ol>
+        </div>
+      </div>
+
+      <!--<div class="faq-item">
+        <div class="faq-question">
+          <h3>Where can I pay my community dues?</h3>
+          <span class="faq-toggle"><i class="fas fa-chevron-down"></i></span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            You can pay your community dues at the Barangay Treasurer's Office at
+            the Barangay Hall during regular office hours. Bring your previous
+            receipt for reference.
+          </p>
+        </div>
+      </div>-->
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <h3>How do I report a community concern?</h3>
+          <span class="faq-toggle"><i class="fas fa-chevron-down"></i></span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            You can report community concerns through:
+          </p>
+          <ul>
+            <li>The "Report" button on our website</li>
+            <li>Visiting the Barangay Hall in person</li>
+            <li>Calling our Barangay hotline at (049) 536-0047 or (049) 502-6234</li>
+            <li>Messaging our official <a href="https://www.facebook.com/looc.calamba.secretariat" target="_blank"><b><u> Facebook page </u></b> <i class="fas fa-external-link-alt fa-xs" aria-hidden="true"></i></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-column">
+        <div class="logos">
+          <img src="/static/calamba.svg" alt="Calamba City Logo" />
+          <img src="/static/looc.svg" alt="Barangay Looc Logo" />
+        </div>
+        <p class="tagline">
+          <a href="about" class=""> <u>About Barangay Looc</u> </a>
+        </p>
+        <div class="social-links">
+          <a href="https://www.facebook.com/looc.calamba.secretariat" target="_blank"><i class="fab fa-facebook"></i></a>
+          <!--<a href="#"><i class="fab fa-twitter"></i></a>-->
+          <!--<a href="#"><i class="fab fa-instagram"></i></a>-->
+          <a href="/credits" target="_blank" ><i class="fa-solid fa-address-card"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-column">
+        <h3>Barangay Contact</h3>
+        <p><i class="fas fa-map-marker-alt"></i> Almon Street, Brgy. Looc, Calamba City, Laguna</p>
+        <p><i class="fas fa-phone"></i> (049) 536-0047 <br>(049) 502-6234 </p>
+        <p><i class="fab fa-facebook"></i> <a href="https://www.facebook.com/looc.calamba.secretariat" target="_blank"> <u> Looc Calamba Secretariat </u> <i class="fas fa-external-link-alt fa-xs" aria-hidden="true"></i></a></p>
+        <p><i class="fab fa-facebook-messenger"></i> <a href="https://www.facebook.com/looc.calamba.secretariat" target="_blank"> <u> Looc Calamba Secretariat </u> <i class="fas fa-external-link-alt fa-xs" aria-hidden="true"></i></a></p>
+      </div>
+
+      <div class="footer-column">
+        <h3>Emergency Contact</h3>
+        <p><i class="fas fa-shield-alt"></i> Police: Police: (049) 545-1694</p>
+        <p><i class="fas fa-fire-extinguisher"></i> BFP: (049) 545-1695</p>
+        <!--<p><i class="fas fa-ambulance"></i> Medical: 012-345-6789</p>-->
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; <span id="copyright-year">2025</span> Barangay Looc, Calamba City. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        const MAX_WORDS = 50;
+
+        document.querySelectorAll('.bulletin-cards .card').forEach(card => {
+            const contentWrapper = card.querySelector('.card-content-wrapper');
+            if (!contentWrapper) return;
+
+            const paragraph = contentWrapper.querySelector('p');
+            const seeMoreLink = contentWrapper.querySelector('.see-more');
+
+            if (!paragraph || !seeMoreLink) return;
+
+            // Store original full content
+            const originalFullHTML = paragraph.innerHTML;
+            const words = paragraph.textContent.trim().split(/\s+/);
+
+            let seeLessLink = null; // To store the "See less" link when created
+
+            function truncateText() {
+                const truncatedHTML = words.slice(0, MAX_WORDS).join(' ') + (words.length > MAX_WORDS ? '...' : '');
+                paragraph.innerHTML = truncatedHTML;
+                seeMoreLink.style.display = 'inline-block';
+                if (seeLessLink) seeLessLink.style.display = 'none';
+                card.classList.remove('expanded'); // Ensure card is not expanded when text is truncated
+            }
+
+            function showFullText() {
+                paragraph.innerHTML = originalFullHTML;
+                seeMoreLink.style.display = 'none';
+                if (words.length > MAX_WORDS) {
+                    if (!seeLessLink) {
+                        seeLessLink = document.createElement('a');
+                        seeLessLink.href = '#';
+                        seeLessLink.textContent = 'See less';
+                        seeLessLink.className = 'see-less'; // Add a class for styling if needed
+                        seeLessLink.style.cursor = 'pointer';
+                        seeLessLink.style.color = 'var(--secondary-color)';
+                        seeLessLink.style.fontWeight = '500';
+                        seeLessLink.style.marginTop = '0.5rem';
+                        seeLessLink.style.display = 'inline-block';
+                        seeMoreLink.parentNode.insertBefore(seeLessLink, seeMoreLink.nextSibling);
+
+                        seeLessLink.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            truncateText();
+                        });
+                    }
+                    seeLessLink.style.display = 'inline-block';
+                }
+                
+                // Expand current card and collapse others in the same section
+                const parentBulletinCards = card.closest('.bulletin-cards');
+                if (parentBulletinCards) {
+                    parentBulletinCards.querySelectorAll('.card.expanded').forEach(expandedCard => {
+                        if (expandedCard !== card) {
+                            expandedCard.classList.remove('expanded');
+                            // Also reset other cards' text to truncated if they were expanded
+                            const otherContentWrapper = expandedCard.querySelector('.card-content-wrapper');
+                            if (otherContentWrapper) {
+                                const otherParagraph = otherContentWrapper.querySelector('p');
+                                const otherSeeMoreLink = otherContentWrapper.querySelector('.see-more');
+                                const otherWords = otherParagraph.textContent.trim().split(/\s+/); // Re-evaluate words for other cards
+                                 if (otherWords.length > MAX_WORDS) { // Only truncate if it was meant to be
+                                    const otherOriginalFullHTML = expandedCard.dataset.originalHTML; // Assuming we store it
+                                    if (otherOriginalFullHTML) { // Check if original HTML was stored
+                                        const otherTruncatedHTML = otherOriginalFullHTML.trim().split(/\s+/).slice(0, MAX_WORDS).join(' ') + '...';
+                                        otherParagraph.innerHTML = otherTruncatedHTML;
+                                        if(otherSeeMoreLink) otherSeeMoreLink.style.display = 'inline-block';
+                                        const otherSeeLessLink = otherContentWrapper.querySelector('.see-less');
+                                        if (otherSeeLessLink) otherSeeLessLink.style.display = 'none';
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                card.classList.add('expanded');
+            }
+
+            // Initial setup
+            if (words.length > MAX_WORDS) {
+                // Store original HTML in a data attribute to retrieve for other cards when they collapse
+                card.dataset.originalHTML = originalFullHTML; 
+                truncateText();
+                seeMoreLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showFullText();
+                });
+            } else {
+                seeMoreLink.style.display = 'none'; // No need for "See more" if content is short
+            }
+        });
+
+        // Remove or modify the old card click listener
+        // The old listener:
+        // document.querySelectorAll(".bulletin-cards .card").forEach((card) => {
+        //   card.addEventListener("click", () => {
+        //     const parent = card.parentElement;
+        //     parent.querySelectorAll(".card").forEach((c) => c.classList.remove("expanded"));
+        //     card.classList.add("expanded");
+        //   });
+        // });
+        // We will remove this. If it's in a separate script block, it needs to be found and removed.
+        // If it's part of a larger script block, it needs to be commented out or deleted.
+        // For this subtask, assume it's the one directly visible in the provided home.html snippet.
+    });
+  </script>
+  <script>
+    // FAQ toggle
+    document.querySelectorAll(".faq-question").forEach((question) => {
+      question.addEventListener("click", () => {
+        const faqItem = question.parentElement;
+        faqItem.classList.toggle("active");
+
+        const icon = question.querySelector(".faq-toggle i");
+        if (faqItem.classList.contains("active")) {
+          icon.classList.replace("fa-chevron-down", "fa-chevron-up");
+        } else {
+          icon.classList.replace("fa-chevron-up", "fa-chevron-down");
+        }
+      });
+    });
+
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+      anchor.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const targetId = this.getAttribute("href");
+        if (targetId === "#") return;
+        if (targetId === "#services-coming-soon") return; // Do nothing if it's a coming soon link
+
+        const target = document.querySelector(targetId);
+        if (target) {
+          window.scrollTo({
+            top: target.offsetTop - 80,
+            behavior: "smooth",
+          });
+        }
+
+        // Close mobile menu if open
+        document.getElementById("menu-toggle").checked = false;
+      });
+    });
+
+    // Prevent scrolling when mobile menu is open
+    document.getElementById("menu-toggle").addEventListener("change", function () {
+      document.body.style.overflow = this.checked ? "hidden" : "";
+    });
+
+    // Close mobile menu when clicking on backdrop
+    document.querySelector(".menu-backdrop").addEventListener("click", function () {
+      document.getElementById("menu-toggle").checked = false;
+      document.body.style.overflow = "";
+    });
+
+    // Close mobile menu after clicking a link
+    document.querySelectorAll(".nav-links a").forEach((link) => {
+      link.addEventListener("click", function () {
+        // Do not close if it's a coming soon link and we are already in the services section
+        const isComingSoonLink = this.getAttribute("href") === "#services-coming-soon";
+        const currentSection = window.location.hash;
+
+        if (isComingSoonLink && (currentSection === "#services" || this.closest("#services"))) {
+            // If it's a coming soon link clicked within the services section, don't prevent default or close menu.
+            // Allow the browser to navigate to the (non-existent) anchor if desired, or do nothing.
+        } else {
+            document.getElementById("menu-toggle").checked = false;
+            document.body.style.overflow = "";
+        }
+      });
+    });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('copyright-year').textContent = new Date().getFullYear();
+    });
+  </script>
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/683e678fcd0abb1908dbddc1/1ispsce4v';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
+
+</body>
+</html>

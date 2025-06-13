@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Initial Setup - Admin User</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      background: linear-gradient(135deg, #4a90e2, #007acc);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      padding: 2.5rem 3rem;
+      max-width: 400px;
+      width: 100%;
+    }
+    h1 {
+      text-align: center;
+      color: #00497a;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      font-size: 1.8rem;
+    }
+    form {
+      width: 100%;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #00497a;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      margin-bottom: 1.25rem;
+      border-radius: 6px;
+      border: 1.8px solid #cdd7e0;
+      font-size: 1rem;
+      transition: border-color 0.25s ease;
+    }
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: #007acc;
+      outline: none;
+      box-shadow: 0 0 6px rgba(0, 122, 204, 0.4);
+    }
+    .btn-submit {
+      width: 100%;
+      background-color: #007acc;
+      color: white;
+      padding: 0.6rem 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .btn-submit:hover {
+      background-color: #005fa3;
+    }
+    .error-message {
+      color: #d93025;
+      font-weight: 600;
+      margin-top: -1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .flash-message {
+      border-radius: 6px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 1.25rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .flash-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .flash-danger {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .flash-warning {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Initial Admin Setup</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-message flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <form method="POST" onsubmit="return validateForm()">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required autocomplete="off" />
+
+      <label for="name">Full Name</label>
+      <input type="text" id="name" name="name" required autocomplete="off" />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required autocomplete="new-password" />
+
+      <label for="confirm_password">Confirm Password</label>
+      <input type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password" />
+      <div id="error-message" class="error-message">Passwords do not match.</div>
+
+      <button type="submit" class="btn-submit">Create Admin User</button>
+    </form>
+  </div>
+
+  <script>
+    function validateForm() {
+      const password = document.getElementById('password').value.trim();
+      const confirmPassword = document.getElementById('confirm_password').value.trim();
+      const errorMessage = document.getElementById('error-message');
+
+      if (password !== confirmPassword) {
+        errorMessage.style.display = 'block';
+        return false;
+      }
+      errorMessage.style.display = 'none';
+      return true;
+    }
+  </script>
+</body>
+</html>

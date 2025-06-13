@@ -1,0 +1,85 @@
+{% extends "admin/layout.html" %}
+{% block title %}News & Events - E-Looc Admin{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 text-gray-800">News & Events</h1>
+    <a href="{{ url_for('admin_create_news') }}" class="btn btn-primary">
+      <i class="fas fa-plus-circle me-2"></i> Add News Item
+    </a>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Image</th>
+              <th>Date Posted</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for news_item in news_items %}
+            <tr>
+              <td>{{ news_item.title }}</td>
+              <td>
+                {% if news_item.image_url %}
+                  <img src="{{ news_item.image_url }}" alt="News Image" style="width: 100px; height: auto;">
+                {% else %}
+                  No Image
+                {% endif %}
+              </td>
+              <td><small><i class="far fa-calendar-alt"></i>
+       {{ news_item.date_posted | datetimeformat }}</small>
+</td>
+              <td>
+                {% if news_item.is_active %}
+                <span class="badge bg-success">Active</span>
+                {% else %}
+                <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('admin_edit_news', id=news_item.id) }}" class="btn btn-sm btn-info">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ news_item.id }}">
+                  <i class="fas fa-trash"></i>
+                </button>
+            <!-- Delete Modal -->
+            <div class="modal fade" id="deleteModal{{ news_item.id }}" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    Are you sure you want to delete the news item: <strong>{{ news_item.title }}</strong>?
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('admin_delete_news', id=news_item.id) }}" method="POST" class="d-inline">
+                      <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center">No news items found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+  </div>
+</div>
+{% endblock %}
