@@ -614,6 +614,10 @@ def about():
 #@app.route("/credits/alden_richards")
 #def alden_richards():
     #return  render_template("alden.html")
+
+@app.route("/coming_soon")
+def coming_soon():
+    return render_template("coming_soon.html")
 if __name__ == "__main__":
     # Use 0.0.0.0 to be reachable in local network, change debug to False in production
     app.run(host="0.0.0.0", debug=True)#
