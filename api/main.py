@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import (
     LoginManager,
     UserMixin,
@@ -545,6 +545,101 @@ def admin_delete_news(id):
     flash("News item deleted successfully!", "success")
     return redirect(url_for("admin_news"))
 
+
+# Patch Notes API Endpoints
+@app.route("/api/patch-notes", methods=["GET"])
+@login_required # Assuming only logged-in admins should access this, adjust if needed
+def get_all_patch_notes():
+    try:
+        response = supabase.table("patch_notes").select("*").order("date", desc=True).execute()
+        if response.data:
+            return jsonify(response.data)
+        else:
+            app.logger.error(f"Error fetching all patch notes: {getattr(response, 'error', 'Unknown error')}")
+            return jsonify({"error": "Failed to fetch patch notes", "details": str(getattr(response, 'error', '')) }), 500
+    except Exception as e:
+        app.logger.error(f"Exception in get_all_patch_notes: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
+@app.route("/api/patch-notes/latest", methods=["GET"])
+@login_required # Assuming only logged-in admins should access this
+def get_latest_patch_note():
+    try:
+        response = supabase.table("patch_notes").select("*").order("date", desc=True).limit(1).single().execute()
+        if response.data:
+            return jsonify(response.data)
+        else:
+            # .single() returns an error in response.error if not found or multiple found
+            # However, PostgrestAPIError might be raised before this for other issues.
+            # If data is empty and no error object, it means no records found which is not an "error" state.
+            if getattr(response, 'error', None):
+                 app.logger.error(f"Error fetching latest patch note: {response.error}")
+                 return jsonify({"error": "Failed to fetch latest patch note", "details": str(response.error)}), 500
+            return jsonify(None), 200 # Return 200 with null body if no patch note exists
+    except Exception as e:
+        # Handle cases where .single() might raise an exception if data is not a single row (though limit(1) should prevent this)
+        # or other unexpected errors.
+        app.logger.error(f"Exception in get_latest_patch_note: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
+# System Maintenance API Endpoints
+@app.route("/api/system-maintenance", methods=["GET"])
+@login_required # Assuming only logged-in admins should access this
+def get_all_system_maintenance():
+    try:
+        response = supabase.table("system_maintenance").select("*").order("start_time", desc=True).execute()
+        if response.data:
+            return jsonify(response.data)
+        else:
+            app.logger.error(f"Error fetching all system maintenance: {getattr(response, 'error', 'Unknown error')}")
+            return jsonify({"error": "Failed to fetch system maintenance messages", "details": str(getattr(response, 'error', '')) }), 500
+    except Exception as e:
+        app.logger.error(f"Exception in get_all_system_maintenance: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
+@app.route("/api/system-maintenance/latest", methods=["GET"])
+@login_required # Assuming only logged-in admins should access this
+def get_latest_system_maintenance():
+    try:
+        now = datetime.now(pytz.utc).isoformat() # Ensure timezone aware comparison
+        # Fetches the most recent maintenance message that is currently active or upcoming.
+        # Orders by start_time descending to get the latest if multiple fit criteria.
+        response = (
+            supabase.table("system_maintenance")
+            .select("*")
+            .lte("start_time", now) # Maintenance should have started
+            .gte("end_time", now)   # And not yet ended
+            .order("start_time", desc=True)
+            .limit(1)
+            .single()
+            .execute()
+        )
+
+        # If no active maintenance, try to find the next upcoming one
+        if not response.data and not getattr(response, 'error', None):
+            response = (
+                supabase.table("system_maintenance")
+                .select("*")
+                .gt("start_time", now) # Future start time
+                .order("start_time", desc=False) # Ascending to get the soonest
+                .limit(1)
+                .single()
+                .execute()
+            )
+
+        if response.data:
+            return jsonify(response.data)
+        else:
+            if getattr(response, 'error', None):
+                app.logger.error(f"Error fetching latest system maintenance: {response.error}")
+                # Distinguish between "not found" and actual errors if possible,
+                # but .single() can make this tricky. For now, a generic error.
+                return jsonify({"error": "Failed to fetch latest system maintenance", "details": str(response.error)}), 500
+            return jsonify(None), 200 # Return 200 with null body if no relevant maintenance message exists
+
+    except Exception as e:
+        app.logger.error(f"Exception in get_latest_system_maintenance: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 # Setup initial admin user
 

@@ -81,4 +81,216 @@
     </div>
   </div>
 </div>
+
+<!-- Patch Notes and Maintenance Row -->
+<div class="row mt-4">
+  <!-- Patch Notes Card -->
+  <div class="col-lg-12 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Patch Notes</h5>
+      </div>
+      <div class="card-body">
+        <div id="patch-notes-content" style="max-height: 300px; overflow-y: auto;">
+          <p class="text-muted">Loading patch notes...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Maintenance Card -->
+  <div class="col-lg-12 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">System Maintenance</h5>
+      </div>
+      <div class="card-body">
+        <div id="system-maintenance-content" style="max-height: 300px; overflow-y: auto;">
+          <p class="text-muted">Loading system maintenance information...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const patchNotesContainer = document.getElementById('patch-notes-content');
+  const maintenanceContainer = document.getElementById('system-maintenance-content');
+
+  // --- Helper to format date/time ---
+  function formatDateTime(isoString) {
+      if (!isoString) return 'N/A';
+      try {
+          const date = new Date(isoString.endsWith('Z') ? isoString : isoString.replace(' ', 'T') + 'Z');
+          if (isNaN(date.getTime())) return isoString;
+
+          const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' };
+          return date.toLocaleString('en-US', options);
+      } catch (e) {
+          console.warn('Error formatting date:', isoString, e);
+          return isoString;
+      }
+  }
+
+  function formatNotes(notesText) {
+      if (!notesText) return '<p>No details provided.</p>';
+      const escapedText = notesText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return escapedText.split('\n').map(paragraph => `<p>${paragraph}</p>`).join('');
+  }
+
+  fetch('/api/patch-notes')
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.json();
+    })
+    .then(data => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        patchNotesContainer.innerHTML = '';
+        data.forEach(note => {
+          const noteDiv = document.createElement('div');
+          noteDiv.className = 'mb-3 p-2 border rounded bg-light';
+          noteDiv.innerHTML = `
+            <h6 class="fw-bold">Version: ${note.version || 'N/A'}</h6>
+            <p><small class="text-muted">Date: ${formatDateTime(note.date)}</small></p>
+            <div class="notes-content">${formatNotes(note.notes)}</div>
+          `;
+          patchNotesContainer.appendChild(noteDiv);
+        });
+      } else if (data && data.error) {
+        patchNotesContainer.innerHTML = `<p class="text-danger">Error loading patch notes: ${data.details || data.error}</p>`;
+      } else {
+        patchNotesContainer.innerHTML = '<p>No patch notes available at the moment.</p>';
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching patch notes:', error);
+      patchNotesContainer.innerHTML = `<p class="text-danger">Could not load patch notes. ${error.message}</p>`;
+    });
+
+  fetch('/api/system-maintenance')
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.json();
+    })
+    .then(data => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        maintenanceContainer.innerHTML = '';
+        const now = new Date();
+        data.forEach(msg => {
+          const startTime = new Date(msg.start_time.endsWith('Z') ? msg.start_time : msg.start_time.replace(' ', 'T') + 'Z');
+          const endTime = new Date(msg.end_time.endsWith('Z') ? msg.end_time : msg.end_time.replace(' ', 'T') + 'Z');
+          let status = '';
+          let statusClass = '';
+          let cardBgClass = 'bg-light';
+
+          if (now >= startTime && now <= endTime) {
+            status = 'Active';
+            statusClass = 'text-danger fw-bold';
+            cardBgClass = 'bg-danger-subtle';
+          } else if (now < startTime) {
+            status = 'Upcoming';
+            statusClass = 'text-warning fw-bold';
+            cardBgClass = 'bg-warning-subtle';
+          } else {
+            status = 'Past';
+            statusClass = 'text-muted';
+          }
+
+          const msgDiv = document.createElement('div');
+          msgDiv.className = `mb-3 p-2 border rounded ${cardBgClass}`;
+          msgDiv.innerHTML = `
+            <h6 class="fw-bold">Status: <span class="${statusClass}">${status}</span></h6>
+            <div class="notes-content">${formatNotes(msg.message)}</div>
+            <p><small class="text-muted">From: ${formatDateTime(msg.start_time)}</small></p>
+            <p><small class="text-muted">To: ${formatDateTime(msg.end_time)}</small></p>
+          `;
+          maintenanceContainer.appendChild(msgDiv);
+        });
+      } else if (data && data.error) {
+          maintenanceContainer.innerHTML = `<p class="text-danger">Error loading maintenance info: ${data.details || data.error}</p>`;
+      } else {
+        maintenanceContainer.innerHTML = '<p>No system maintenance messages at the moment.</p>';
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching system maintenance:', error);
+      maintenanceContainer.innerHTML = `<p class="text-danger">Could not load system maintenance information. ${error.message}</p>`;
+    });
+
+  fetch('/api/patch-notes/latest')
+    .then(response => {
+        if (!response.ok) return response.json().then(err => { throw new Error(`HTTP error! status: ${response.status}, details: ${err.details || err.error || JSON.stringify(err)}` )});
+        if (response.status === 200) {
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                return response.json();
+            } else {
+                return null;
+            }
+        }
+        return response.json();
+    })
+    .then(data => {
+      if (data && data.id) {
+        const storageKey = 'shownPatchNote_' + data.id;
+        if (sessionStorage.getItem(storageKey) !== 'true') {
+          let patchNotePopupHTML = `
+            <p><strong>Version:</strong> ${data.version || 'N/A'}</p>
+            <p><strong>Date:</strong> ${formatDateTime(data.date)}</p>
+            <div class="notes-content">${formatNotes(data.notes)}</div>
+          `;
+          showAdminUpdatePopup('Latest Patch Note', patchNotePopupHTML);
+          sessionStorage.setItem(storageKey, 'true');
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching latest patch note for popup:', error);
+    })
+    .finally(() => {
+      fetch('/api/system-maintenance/latest')
+        .then(response => {
+            if (!response.ok) return response.json().then(err => { throw new Error(`HTTP error! status: ${response.status}, details: ${err.details || err.error || JSON.stringify(err)}` )});
+             if (response.status === 200) {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    return null;
+                }
+            }
+            return response.json();
+        })
+        .then(data => {
+          if (data && data.id) {
+            const storageKey = 'shownMaintenance_' + data.id;
+            if (sessionStorage.getItem(storageKey) !== 'true') {
+              const now = new Date();
+              const startTime = new Date(data.start_time.endsWith('Z') ? data.start_time : data.start_time.replace(' ', 'T') + 'Z');
+              const endTime = new Date(data.end_time.endsWith('Z') ? data.end_time : data.end_time.replace(' ', 'T') + 'Z');
+              let status = (now >= startTime && now <= endTime) ? 'Active' : 'Upcoming';
+
+              if (status === 'Active' || status === 'Upcoming') {
+                let maintenancePopupHTML = `
+                  <p><strong>Status:</strong> <span class="${status === 'Active' ? 'text-danger' : 'text-warning'} fw-bold">${status}</span></p>
+                  <div class="notes-content">${formatNotes(data.message)}</div>
+                  <p><small>Starts: ${formatDateTime(data.start_time)}</small></p>
+                  <p><small>Ends: ${formatDateTime(data.end_time)}</small></p>
+                `;
+                showAdminUpdatePopup('System Maintenance Alert', maintenancePopupHTML);
+                sessionStorage.setItem(storageKey, 'true');
+              }
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching latest system maintenance for popup:', error);
+        });
+    });
+});
+</script>
 {% endblock %}
