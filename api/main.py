@@ -721,6 +721,22 @@ def about():
 @app.route("/coming_soon")
 def coming_soon():
     return render_template("coming_soon.html")
+
+@app.route("/admin/brgy_certificate_requests")
+@login_required
+def brgy_certificate_requests():
+    return render_template("admin/brgy_certificate_requests.html")
+
+@app.route("/admin/business_permit_requests")
+@login_required
+def business_permit_requests():
+    return render_template("admin/business_permit_requests.html")
+
+@app.route("/admin/reports_and_concerns")
+@login_required
+def reports_and_concerns():
+    return render_template("admin/reports_and_concerns.html")
+
 if __name__ == "__main__":
     # Use 0.0.0.0 to be reachable in local network, change debug to False in production
     app.run(host="0.0.0.0", debug=True)#
