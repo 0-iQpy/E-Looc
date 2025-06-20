@@ -83,16 +83,38 @@
 </div>
 
 <!-- Patch Notes and Maintenance Row -->
+<!-- Patch Notes and Maintenance Row -->
 <div class="row mt-4">
   <!-- Patch Notes Card -->
   <div class="col-lg-12 mb-4">
     <div class="card">
       <div class="card-header">
-        <h5 class="mb-0">Patch Notes</h5>
+        <h2 class="h5 mb-0">Patch Notes</h2>
       </div>
       <div class="card-body">
-        <div id="patch-notes-content" style="max-height: 300px; overflow-y: auto;">
-          <p class="text-muted">Loading patch notes...</p>
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          {% if patch_notes %}
+          <table class="table table-sm table-striped table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Version</th>
+                <th>Description</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for note in patch_notes %}
+              <tr>
+                <td>{{ note.version }}</td>
+                <td><pre style="white-space: pre-wrap; word-break: break-word; margin-bottom: 0;">{{ note.notes }}</pre></td>
+                <td>{{ note.date | datetimeformat }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted">No patch notes available.</p>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -102,11 +124,34 @@
   <div class="col-lg-12 mb-4">
     <div class="card">
       <div class="card-header">
-        <h5 class="mb-0">System Maintenance</h5>
+        <h2 class="h5 mb-0">System Maintenance</h2>
       </div>
       <div class="card-body">
-        <div id="system-maintenance-content" style="max-height: 300px; overflow-y: auto;">
-          <p class="text-muted">Loading system maintenance information...</p>
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          {% if system_maintenance %}
+          <table class="table table-sm table-striped table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Title</th>
+                <th>Message</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in system_maintenance %}
+              <tr>
+                <td>{{ item.title }}</td>
+                <td><pre style="white-space: pre-wrap; word-break: break-word; margin-bottom: 0;">{{ item.message }}</pre></td>
+                <td>{{ item.start_time | datetimeformat }}</td>
+                <td>{{ item.end_time | datetimeformat }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted">No system maintenance messages available.</p>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -118,109 +163,45 @@
 {{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const patchNotesContainer = document.getElementById('patch-notes-content');
-  const maintenanceContainer = document.getElementById('system-maintenance-content');
-
-  // --- Helper to format date/time ---
+  // --- Helper to format date/time (used for popups) ---
   function formatDateTime(isoString) {
       if (!isoString) return 'N/A';
       try {
-          const date = new Date(isoString.endsWith('Z') ? isoString : isoString.replace(' ', 'T') + 'Z');
-          if (isNaN(date.getTime())) return isoString;
+          // Try to parse assuming it might or might not have 'Z'
+          const date = new Date(isoString.endsWith('Z') || isoString.includes('T') ? isoString : isoString.replace(' ', 'T') + 'Z');
+          if (isNaN(date.getTime())) return isoString; // Return original if parsing failed
 
-          const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' };
-          return date.toLocaleString('en-US', options);
+          // More robust options for toLocaleString
+          const options = {
+              year: 'numeric', month: 'long', day: 'numeric',
+              hour: '2-digit', minute: '2-digit',
+              timeZone: 'Asia/Manila' // Explicitly set to Manila time
+          };
+          // Check if Intl and toLocaleString support is good
+          if (typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function' && new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila' }).resolvedOptions().timeZone) {
+            return date.toLocaleString('en-US', options);
+          } else { // Fallback for older browsers or less support
+            // This will use browser's local time, which might not be Manila time.
+            // Consider a more robust library if exact timezone formatting in JS is critical for older browsers.
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+          }
       } catch (e) {
           console.warn('Error formatting date:', isoString, e);
-          return isoString;
+          return isoString; // Return original on error
       }
   }
 
   function formatNotes(notesText) {
       if (!notesText) return '<p>No details provided.</p>';
-      const escapedText = notesText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      // Basic escaping for security, though Jinja templating handles this server-side for direct render
+      const escapedText = String(notesText).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      // Preserve line breaks from the database by splitting and wrapping in <p> or using <pre>
+      // Using <pre> might be better for 'notes' or 'message' fields.
+      // For this popup, let's assume simple paragraph conversion.
       return escapedText.split('\n').map(paragraph => `<p>${paragraph}</p>`).join('');
   }
 
-  fetch('/api/patch-notes')
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-      if (data && Array.isArray(data) && data.length > 0) {
-        patchNotesContainer.innerHTML = '';
-        data.forEach(note => {
-          const noteDiv = document.createElement('div');
-          noteDiv.className = 'mb-3 p-2 border rounded bg-light';
-          noteDiv.innerHTML = `
-            <h6 class="fw-bold">Version: ${note.version || 'N/A'}</h6>
-            <p><small class="text-muted">Date: ${formatDateTime(note.date)}</small></p>
-            <div class="notes-content">${formatNotes(note.notes)}</div>
-          `;
-          patchNotesContainer.appendChild(noteDiv);
-        });
-      } else if (data && data.error) {
-        patchNotesContainer.innerHTML = `<p class="text-danger">Error loading patch notes: ${data.details || data.error}</p>`;
-      } else {
-        patchNotesContainer.innerHTML = '<p>No patch notes available at the moment.</p>';
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching patch notes:', error);
-      patchNotesContainer.innerHTML = `<p class="text-danger">Could not load patch notes. ${error.message}</p>`;
-    });
-
-  fetch('/api/system-maintenance')
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-      if (data && Array.isArray(data) && data.length > 0) {
-        maintenanceContainer.innerHTML = '';
-        const now = new Date();
-        data.forEach(msg => {
-          const startTime = new Date(msg.start_time.endsWith('Z') ? msg.start_time : msg.start_time.replace(' ', 'T') + 'Z');
-          const endTime = new Date(msg.end_time.endsWith('Z') ? msg.end_time : msg.end_time.replace(' ', 'T') + 'Z');
-          let status = '';
-          let statusClass = '';
-          let cardBgClass = 'bg-light';
-
-          if (now >= startTime && now <= endTime) {
-            status = 'Active';
-            statusClass = 'text-danger fw-bold';
-            cardBgClass = 'bg-danger-subtle';
-          } else if (now < startTime) {
-            status = 'Upcoming';
-            statusClass = 'text-warning fw-bold';
-            cardBgClass = 'bg-warning-subtle';
-          } else {
-            status = 'Past';
-            statusClass = 'text-muted';
-          }
-
-          const msgDiv = document.createElement('div');
-          msgDiv.className = `mb-3 p-2 border rounded ${cardBgClass}`;
-          msgDiv.innerHTML = `
-            <h6 class="fw-bold">Status: <span class="${statusClass}">${status}</span></h6>
-            <div class="notes-content">${formatNotes(msg.message)}</div>
-            <p><small class="text-muted">From: ${formatDateTime(msg.start_time)}</small></p>
-            <p><small class="text-muted">To: ${formatDateTime(msg.end_time)}</small></p>
-          `;
-          maintenanceContainer.appendChild(msgDiv);
-        });
-      } else if (data && data.error) {
-          maintenanceContainer.innerHTML = `<p class="text-danger">Error loading maintenance info: ${data.details || data.error}</p>`;
-      } else {
-        maintenanceContainer.innerHTML = '<p>No system maintenance messages at the moment.</p>';
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching system maintenance:', error);
-      maintenanceContainer.innerHTML = `<p class="text-danger">Could not load system maintenance information. ${error.message}</p>`;
-    });
-
+  // Keep the popup logic for latest patch notes and system maintenance
   fetch('/api/patch-notes/latest')
     .then(response => {
         if (!response.ok) return response.json().then(err => { throw new Error(`HTTP error! status: ${response.status}, details: ${err.details || err.error || JSON.stringify(err)}` )});
@@ -229,13 +210,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (contentType && contentType.indexOf("application/json") !== -1) {
                 return response.json();
             } else {
-                return null;
+                return null; // No JSON content (e.g. 204 No Content or empty body for 200)
             }
         }
-        return response.json();
+        // For other non-ok statuses that might still have JSON (e.g. 400 with error details)
+        return response.json().catch(() => { throw new Error(`HTTP error! status: ${response.status}. Could not parse JSON error body.`); });
     })
     .then(data => {
-      if (data && data.id) {
+      if (data && data.id) { // Check if data is not null and has an id
         const storageKey = 'shownPatchNote_' + data.id;
         if (sessionStorage.getItem(storageKey) !== 'true') {
           let patchNotePopupHTML = `
@@ -250,46 +232,50 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(error => {
       console.error('Error fetching latest patch note for popup:', error);
-    })
-    .finally(() => {
-      fetch('/api/system-maintenance/latest')
-        .then(response => {
-            if (!response.ok) return response.json().then(err => { throw new Error(`HTTP error! status: ${response.status}, details: ${err.details || err.error || JSON.stringify(err)}` )});
-             if (response.status === 200) {
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    return response.json();
-                } else {
-                    return null;
-                }
-            }
-            return response.json();
-        })
-        .then(data => {
-          if (data && data.id) {
-            const storageKey = 'shownMaintenance_' + data.id;
-            if (sessionStorage.getItem(storageKey) !== 'true') {
-              const now = new Date();
-              const startTime = new Date(data.start_time.endsWith('Z') ? data.start_time : data.start_time.replace(' ', 'T') + 'Z');
-              const endTime = new Date(data.end_time.endsWith('Z') ? data.end_time : data.end_time.replace(' ', 'T') + 'Z');
-              let status = (now >= startTime && now <= endTime) ? 'Active' : 'Upcoming';
+    });
+    // Removed .finally() to chain the fetches sequentially to avoid potential race conditions for popups
+    // though in this case, they are independent. Chaining is just a bit cleaner.
 
-              if (status === 'Active' || status === 'Upcoming') {
-                let maintenancePopupHTML = `
-                  <p><strong>Status:</strong> <span class="${status === 'Active' ? 'text-danger' : 'text-warning'} fw-bold">${status}</span></p>
-                  <div class="notes-content">${formatNotes(data.message)}</div>
-                  <p><small>Starts: ${formatDateTime(data.start_time)}</small></p>
-                  <p><small>Ends: ${formatDateTime(data.end_time)}</small></p>
-                `;
-                showAdminUpdatePopup('System Maintenance Alert', maintenancePopupHTML);
-                sessionStorage.setItem(storageKey, 'true');
-              }
+  fetch('/api/system-maintenance/latest')
+    .then(response => {
+        if (!response.ok) return response.json().then(err => { throw new Error(`HTTP error! status: ${response.status}, details: ${err.details || err.error || JSON.stringify(err)}` )});
+        if (response.status === 200) {
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                return response.json();
+            } else {
+                return null;
             }
+        }
+        return response.json().catch(() => { throw new Error(`HTTP error! status: ${response.status}. Could not parse JSON error body.`); });
+    })
+    .then(data => {
+      if (data && data.id) { // Check if data is not null and has an id
+        const storageKey = 'shownMaintenance_' + data.id;
+        if (sessionStorage.getItem(storageKey) !== 'true') {
+          const now = new Date();
+          // Ensure date strings are valid for Date constructor
+          const startTimeStr = data.start_time.endsWith('Z') || data.start_time.includes('T') ? data.start_time : data.start_time.replace(' ', 'T') + 'Z';
+          const endTimeStr = data.end_time.endsWith('Z') || data.end_time.includes('T') ? data.end_time : data.end_time.replace(' ', 'T') + 'Z';
+          const startTime = new Date(startTimeStr);
+          const endTime = new Date(endTimeStr);
+          let status = (now >= startTime && now <= endTime) ? 'Active' : (now < startTime ? 'Upcoming' : 'Past');
+
+          if (status === 'Active' || status === 'Upcoming') {
+            let maintenancePopupHTML = `
+              <p><strong>Status:</strong> <span class="${status === 'Active' ? 'text-danger' : 'text-warning'} fw-bold">${status}</span></p>
+              <div class="notes-content">${formatNotes(data.message)}</div>
+              <p><small>Starts: ${formatDateTime(data.start_time)}</small></p>
+              <p><small>Ends: ${formatDateTime(data.end_time)}</small></p>
+            `;
+            showAdminUpdatePopup('System Maintenance Alert', maintenancePopupHTML);
+            sessionStorage.setItem(storageKey, 'true');
           }
-        })
-        .catch(error => {
-          console.error('Error fetching latest system maintenance for popup:', error);
-        });
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching latest system maintenance for popup:', error);
     });
 });
 </script>

@@ -241,12 +241,20 @@ def admin_logout():
 def admin_dashboard():
     bulletin_count_resp = supabase.table("bulletin_posts").select("id", count="exact").execute()
     news_count_resp = supabase.table("news_posts").select("id", count="exact").execute()
+    patch_notes_resp = supabase.table("patch_notes").select("*").order("date", desc=True).execute()
+    system_maintenance_resp = supabase.table("system_maintenance").select("*").order("start_time", desc=True).execute()
 
     bulletin_count = bulletin_count_resp.count or 0
     news_count = news_count_resp.count or 0
+    patch_notes = patch_notes_resp.data or []
+    system_maintenance = system_maintenance_resp.data or []
 
     return render_template(
-        "admin/dashboard.html", bulletin_count=bulletin_count, news_count=news_count
+        "admin/dashboard.html",
+        bulletin_count=bulletin_count,
+        news_count=news_count,
+        patch_notes=patch_notes,
+        system_maintenance=system_maintenance,
     )
 
 
