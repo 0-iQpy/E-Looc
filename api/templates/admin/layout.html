@@ -449,7 +449,7 @@
         <div class="admin-popup-content">
             <div class="admin-popup-header">
                 <h2 id="adminPopupTitle">Recent Updates</h2>
-                <button class="admin-popup-close" onclick="hideAdminUpdatePopup()">&times;</button>
+                <button class="admin-popup-close" onclick="hideAdminUpdatePopup(false)">&times;</button>
             </div>
             <div class="admin-popup-body" id="adminPopupBody">
                 <!-- Update content will be injected here -->
@@ -461,47 +461,47 @@
                 </ul>
             </div>
             <div class="admin-popup-footer">
-                <button class="admin-popup-button primary" onclick="hideAdminUpdatePopup()">Got it!</button>
+                <button class="admin-popup-button primary" onclick="hideAdminUpdatePopup(true)">Got it!</button>
             </div>
         </div>
     </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Mobile sidebar toggle functionality
+    // Note: The DOMContentLoaded listener for sidebar functionality is kept separate
+    // from the notification logic for clarity.
     document.addEventListener('DOMContentLoaded', function() {
       const sidebar = document.getElementById('sidebar');
       const sidebarToggle = document.getElementById('sidebarToggle');
       const sidebarBackdrop = document.getElementById('sidebarBackdrop');
 
-      // Toggle sidebar
-      sidebarToggle.addEventListener('click', function() {
-        sidebar.classList.toggle('show');
-        sidebarBackdrop.classList.toggle('show');
-      });
+      if (sidebarToggle) { // Ensure elements exist before adding listeners
+        sidebarToggle.addEventListener('click', function() {
+          sidebar.classList.toggle('show');
+          sidebarBackdrop.classList.toggle('show');
+        });
+      }
 
-      // Close sidebar when clicking backdrop
-      sidebarBackdrop.addEventListener('click', function() {
-        sidebar.classList.remove('show');
-        sidebarBackdrop.classList.remove('show');
-      });
-
-      // Close sidebar when window is resized to desktop size
-      window.addEventListener('resize', function() {
-        if (window.innerWidth >= 992) {
+      if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', function() {
           sidebar.classList.remove('show');
           sidebarBackdrop.classList.remove('show');
+        });
+      }
+
+      window.addEventListener('resize', function() {
+        if (window.innerWidth >= 992) {
+          if (sidebar) sidebar.classList.remove('show');
+          if (sidebarBackdrop) sidebarBackdrop.classList.remove('show');
         }
       });
 
-      // Toggle collapsible card sections on mobile
       function updateCardCollapses() {
         const isMobile = window.innerWidth < 768;
         const collapsibleCards = document.querySelectorAll('[data-bs-toggle="collapse"].d-md-none');
-
         collapsibleCards.forEach(toggle => {
           const targetId = toggle.getAttribute('data-bs-target');
           const target = document.querySelector(targetId);
-
           if (target) {
             if (isMobile) {
               target.classList.remove('show');
@@ -511,40 +511,156 @@
           }
         });
       }
-
-      // Run on page load
       updateCardCollapses();
-
-      // Run on window resize
       window.addEventListener('resize', updateCardCollapses);
     });
   </script>
-  <script>{% block scripts %}        // Functions to show/hide the pop-up
-        // These would typically be called from the main admin page
-        function showAdminUpdatePopup(title, contentHTML) {
-            const overlay = document.getElementById('adminUpdatePopupOverlay');
-            if (title) {
-                document.getElementById('adminPopupTitle').textContent = title;
+  <script>{% block scripts %}
+        const ACKNOWLEDGED_MAINTENANCE_KEY_PREFIX = 'acknowledged_maintenance_';
+        const ACKNOWLEDGED_PATCH_NOTE_KEY_PREFIX = 'acknowledged_patch_note_';
+        const adminUpdatePopupOverlay = document.getElementById('adminUpdatePopupOverlay');
+
+        function showAdminUpdatePopup(title, contentHTML, type, id) {
+            if (!adminUpdatePopupOverlay) return;
+
+            const titleEl = document.getElementById('adminPopupTitle');
+            const bodyEl = document.getElementById('adminPopupBody');
+
+            if (titleEl) titleEl.textContent = title;
+            if (bodyEl) bodyEl.innerHTML = contentHTML;
+
+            adminUpdatePopupOverlay.dataset.messageType = type;
+            adminUpdatePopupOverlay.dataset.messageId = id;
+            adminUpdatePopupOverlay.classList.add('visible');
+        }
+
+        function hideAdminUpdatePopup(acknowledged = false) {
+            if (!adminUpdatePopupOverlay) return;
+
+            const type = adminUpdatePopupOverlay.dataset.messageType;
+            const id = adminUpdatePopupOverlay.dataset.messageId;
+
+            if (acknowledged && type && id) {
+                let storageKeyPrefix = '';
+                if (type === 'maintenance') {
+                    storageKeyPrefix = ACKNOWLEDGED_MAINTENANCE_KEY_PREFIX;
+                } else if (type === 'patch_note') {
+                    storageKeyPrefix = ACKNOWLEDGED_PATCH_NOTE_KEY_PREFIX;
+                }
+                if (storageKeyPrefix) {
+                    localStorage.setItem(storageKeyPrefix + id, 'true');
+                }
             }
-            if (contentHTML) {
-                document.getElementById('adminPopupBody').innerHTML = contentHTML;
-            }
-            if (overlay) {
-                overlay.classList.add('visible');
+
+            adminUpdatePopupOverlay.classList.remove('visible');
+            adminUpdatePopupOverlay.dataset.messageType = '';
+            adminUpdatePopupOverlay.dataset.messageId = '';
+
+            if (type === 'maintenance') {
+                // Directly call processPatchNotePopup after maintenance is handled.
+                // Pass null to indicate it needs to fetch.
+                processPatchNotePopup(null);
             }
         }
 
-        function hideAdminUpdatePopup() {
-            const overlay = document.getElementById('adminUpdatePopupOverlay');
-            if (overlay) {
-                overlay.classList.remove('visible');
+        function processMaintenancePopup(maintenanceData) {
+            if (!maintenanceData || !maintenanceData.id) {
+                // If no maintenance data or ID, proceed to check for patch notes.
+                processPatchNotePopup(null); // Pass null to fetch patch notes
+                return;
+            }
+
+            const storageKey = ACKNOWLEDGED_MAINTENANCE_KEY_PREFIX + maintenanceData.id;
+            if (!localStorage.getItem(storageKey)) {
+                const title = `Maintenance Notice: ${maintenanceData.title || 'System Maintenance'}`;
+                const body = maintenanceData.description || maintenanceData.content || 'Details for maintenance.';
+                showAdminUpdatePopup(title, body, 'maintenance', maintenanceData.id);
+            } else {
+                // If maintenance acknowledged, proceed to check for patch notes.
+                processPatchNotePopup(null); // Pass null to fetch patch notes
             }
         }
 
-        // Example usage (for testing purposes, remove or adapt for actual implementation):
-        // document.addEventListener('DOMContentLoaded', function() {
-        // //     // To test, uncomment the line below:
-        // // showAdminUpdatePopup('System Maintenance', '<p>The system will be down for maintenance tonight.</p><ul><li>Time: 1 AM - 3 AM</li><li>Reason: Database upgrade</li></ul>');
-        // });{% endblock %}</script>
+        function processPatchNotePopup(patchNoteData) {
+            // If patchNoteData is explicitly passed (e.g., from a chained fetch if we implement that later), use it.
+            // Otherwise, fetch it.
+            if (patchNoteData === undefined || patchNoteData === null) {
+                fetch('/api/patch-notes/latest')
+                    .then(response => {
+                        if (!response.ok) {
+                            if (response.status === 404) { // No patch notes found is not an error
+                                console.info('No patch notes found.');
+                                return null;
+                            }
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Call this function again with the fetched data.
+                        // This recursive call (or rather, re-invocation) ensures the logic below is executed.
+                        processPatchNotePopup(data);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching latest patch note:', error);
+                        // Even if patch notes fail, the app should continue.
+                    });
+                return; // Important: exit here to wait for the fetch to complete.
+            }
+
+            // patchNoteData is now either the fetched data or null (if 404 or initial empty call resolved)
+            if (!patchNoteData || !patchNoteData.id) {
+                // No patch notes to show (either none exist, or fetch returned empty)
+                return;
+            }
+
+            const storageKey = ACKNOWLEDGED_PATCH_NOTE_KEY_PREFIX + patchNoteData.id;
+            if (!localStorage.getItem(storageKey)) {
+                const title = `Patch Update: ${patchNoteData.title || 'Recent Update'}`;
+                const body = patchNoteData.notes || patchNoteData.description || 'Details of the patch.';
+                showAdminUpdatePopup(title, body, 'patch_note', patchNoteData.id);
+            }
+        }
+
+        function handleAdminNotifications() {
+            fetch('/api/system-maintenance/latest')
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 404) { // No maintenance found is not an error
+                            console.info('No system maintenance found.');
+                            return null; // Explicitly return null to signal no data
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    // Check if content type is JSON before parsing
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.indexOf("application/json") !== -1) {
+                        return response.json();
+                    } else {
+                        // If not JSON, it might be an empty response for 204 or a non-JSON error page
+                        // For 204 (No Content), which can be valid if no maintenance, treat as null
+                        if (response.status === 204) return null;
+                        // Otherwise, it's an unexpected response type
+                        console.warn('Received non-JSON response for system maintenance.');
+                        return null; // Treat as no data to avoid breaking JSON parsing
+                    }
+                })
+                .then(maintenanceData => {
+                    // maintenanceData could be null if 404, 204, or non-JSON
+                    processMaintenancePopup(maintenanceData);
+                })
+                .catch(error => {
+                    console.error('Error fetching latest system maintenance:', error);
+                    // If fetching maintenance fails, still try to process patch notes.
+                    processPatchNotePopup(null); // Pass null to fetch patch notes
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Existing sidebar and UI functionality should remain here if it was here before.
+            // The example showAdminUpdatePopup call is removed.
+            handleAdminNotifications();
+        });
+    {% endblock %}</script>
 </body>
 </html>
