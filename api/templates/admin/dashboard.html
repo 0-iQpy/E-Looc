@@ -83,43 +83,7 @@
 </div>
 
 <!-- Patch Notes and Maintenance Row -->
-<!-- Patch Notes and Maintenance Row -->
 <div class="row mt-4">
-  <!-- Patch Notes Card -->
-  <div class="col-lg-12 mb-4">
-    <div class="card">
-      <div class="card-header">
-        <h2 class="h5 mb-0">Patch Notes</h2>
-      </div>
-      <div class="card-body">
-        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-          {% if patch_notes %}
-          <table class="table table-sm table-striped table-hover">
-            <thead class="table-light">
-              <tr>
-                <th>Version</th>
-                <th>Description</th>
-                <th>Date Implemented</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for note in patch_notes %}
-              <tr>
-                <td>{{ note.version }}</td>
-                <td><pre style="white-space: pre-wrap; word-break: break-word; margin-bottom: 0;">{{ note.notes }}</pre></td>
-                <td>{{ note.date | datetimeformat }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-          {% else %}
-          <p class="text-muted">No patch notes available.</p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- System Maintenance Card -->
   <div class="col-lg-12 mb-4">
     <div class="card">
@@ -151,6 +115,41 @@
           </table>
           {% else %}
           <p class="text-muted">No system maintenance messages available.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patch Notes Card -->
+  <div class="col-lg-12 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="h5 mb-0">Patch Notes</h2>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          {% if patch_notes %}
+          <table class="table table-sm table-striped table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Version</th>
+                <th>Description</th>
+                <th>Date Implemented</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for note in patch_notes %}
+              <tr>
+                <td>{{ note.version }}</td>
+                <td><pre style="white-space: pre-wrap; word-break: break-word; margin-bottom: 0;">{{ note.notes }}</pre></td>
+                <td>{{ note.date | datetimeformat }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted">No patch notes available.</p>
           {% endif %}
         </div>
       </div>
