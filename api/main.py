@@ -1,5 +1,6 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask_socketio import SocketIO, emit
 from flask_login import (
     LoginManager,
     UserMixin,
@@ -23,6 +24,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+socketio = SocketIO(app, async_mode='eventlet')
 
 # Initialize Supabase client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -737,6 +739,138 @@ def business_permit_requests():
 def reports_and_concerns():
     return render_template("admin/reports_and_concerns.html")
 
+# Route for receiving new form responses
+@app.route("/new-response", methods=["POST"])
+def new_response():
+    # Validate secret token
+    # It's good practice to store this token in environment variables
+    # and not hardcode it.
+    secret_token = os.getenv("FORM_SECRET_TOKEN", "DEFAULT_FALLBACK_SECRET_TOKEN_CHANGE_ME") # Added a default for safety, but should be set in .env
+
+    # Try to get token from headers first, then from JSON body
+    auth_header = request.headers.get("Authorization")
+    received_token = None
+
+    if auth_header and auth_header.startswith("Bearer "):
+        received_token = auth_header.split("Bearer ")[1]
+    else:
+        # If not in header, check if it's in JSON body (e.g. from Apps Script)
+        data = request.get_json(silent=True)
+        if data and "token" in data:
+            received_token = data.get("token")
+        elif "secret_token" in request.form: # Also check form data if not JSON
+             received_token = request.form.get("secret_token")
+
+
+    if not received_token:
+        app.logger.warning("New response: Missing token.")
+        return jsonify({"status": "error", "message": "Missing token"}), 401 # Unauthorized
+
+    if received_token != secret_token:
+        app.logger.warning(f"New response: Invalid token. Received: {received_token}")
+        return jsonify({"status": "error", "message": "Invalid token"}), 403 # Forbidden
+
+    # Token is valid, proceed
+    form_data = request.json if request.is_json else request.form
+    app.logger.info(f"New response received: {form_data}")
+
+    # Emit a SocketIO event to all connected clients
+    # You can customize the event name and data as needed
+    notification_payload = {"message": "New form response received!", "data": dict(form_data), "timestamp": get_manila_time().isoformat()}
+    socketio.emit("new_notification", notification_payload, namespace="/admin") # Sending to a namespace
+
+    # Save the notification to the database
+    try:
+        # For 'new_form_response', user_id might be null as it's a system event triggered by the form,
+        # not directly by a logged-in user's action within this app session.
+        # Or, you could assign it to a generic system user ID if you have one.
+        supabase.table("notifications").insert({
+            "type": "new_form_response",
+            "data": dict(form_data), # Ensure form_data is a dict for JSONB
+            "is_read": False,
+            # user_id could be set if there's a relevant user context, otherwise null.
+            # For a general notification from an external form, user_id might be null.
+        }).execute()
+        app.logger.info("Notification saved to database.")
+    except Exception as e:
+        app.logger.error(f"Error saving notification to database: {str(e)}")
+        # Decide if this should prevent a 200 OK to the form.
+        # For now, we'll still return 200 if SocketIO emit worked,
+        # as the primary goal is real-time notification.
+        # The client (Apps Script) will get a success, but we log the DB error.
+
+    return jsonify({"status": "success", "message": "Response received, notification sent and attempted DB save"}), 200
+
+@app.route("/api/notifications", methods=["GET"])
+@login_required # Ensure only logged-in users can access
+def get_notifications():
+    try:
+        # Fetch recent unread notifications for the current user, or all if no user_id focus
+        # For now, let's fetch top 10 unread, or top 10 overall if all are read / no user focus
+        # This assumes user_id is being set, or we adapt the query
+
+        # Simple approach: Get top 10 latest notifications, is_read status will be handled by frontend display
+        # In a multi-admin setup, you'd filter by current_user.id and is_read = False
+        query = (
+            supabase.table("notifications")
+            .select("id, created_at, type, data, is_read")
+            .order("created_at", desc=True)
+            .limit(10) # Limit for initial load
+        )
+        # If you store user_id with notifications and want per-user unread:
+        # query = query.eq("user_id", current_user.id).eq("is_read", False)
+
+        response = query.execute()
+
+        if response.data:
+            return jsonify({"status": "success", "notifications": response.data}), 200
+        else:
+            # It's not an error if there are no notifications
+            app.logger.info(f"No notifications found or Supabase error: {getattr(response, 'error', 'N/A')}")
+            return jsonify({"status": "success", "notifications": []}), 200
+
+    except Exception as e:
+        app.logger.error(f"Error fetching notifications: {str(e)}")
+        return jsonify({"status": "error", "message": "Failed to fetch notifications"}), 500
+
+@app.route("/api/notifications/mark-read", methods=["POST"])
+@login_required
+def mark_notifications_as_read():
+    try:
+        data = request.get_json()
+        notification_ids = data.get("ids") # Expecting a list of IDs to mark as read
+
+        if not notification_ids or not isinstance(notification_ids, list):
+            # If no IDs provided, perhaps mark all for the user as read?
+            # For now, require specific IDs or implement "mark all" logic.
+            # Let's implement "mark all unread for user X" or "mark all unread" for simplicity here.
+            # This example will mark ALL notifications as read if no IDs are passed.
+            # In a real app, you'd likely filter by current_user.id.
+
+            update_query = supabase.table("notifications").update({"is_read": True, "read_at": get_manila_time().isoformat()})
+
+            if notification_ids: # If specific IDs are provided
+                update_query = update_query.in_("id", notification_ids)
+            else: # Mark all (potentially for a user, or globally if no user context)
+                # Add .eq("user_id", current_user.id) if marking for current user
+                update_query = update_query.eq("is_read", False) # Only mark unread ones
+
+            response = update_query.execute()
+
+            # Check response for errors if Supabase client version requires it
+            if hasattr(response, 'error') and response.error:
+                app.logger.error(f"Error marking notifications as read in DB: {response.error}")
+                return jsonify({"status": "error", "message": "Failed to mark notifications as read"}), 500
+
+            app.logger.info(f"Marked notifications as read. IDs: {notification_ids if notification_ids else 'all unread'}")
+            return jsonify({"status": "success", "message": "Notifications marked as read"}), 200
+
+    except Exception as e:
+        app.logger.error(f"Error in mark_notifications_as_read: {str(e)}")
+        return jsonify({"status": "error", "message": "An unexpected error occurred"}), 500
+
+
 if __name__ == "__main__":
     # Use 0.0.0.0 to be reachable in local network, change debug to False in production
-    app.run(host="0.0.0.0", debug=True)#
+    # app.run(host="0.0.0.0", debug=True)
+    socketio.run(app, host="0.0.0.0", debug=True)

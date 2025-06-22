@@ -413,11 +413,23 @@
             <button class="sidebar-toggle" id="sidebarToggle">
               <i class="fas fa-bars"></i>
             </button>
-            <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center ms-auto"> <!-- ms-auto pushes this group to the right -->
+              <!-- Notification Bell -->
+              <div class="nav-item dropdown me-3" id="notificationBellArea">
+                <a class="nav-link text-dark" href="#" id="notificationBellLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fas fa-bell"></i>
+                  <span class="badge rounded-pill bg-danger" id="notificationBadge" style="position: absolute; top: 0px; right: -5px; font-size: 0.6em; padding: 0.3em 0.5em;">0</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationBellLink" id="notificationList">
+                  <li><a class="dropdown-item text-center" href="#">No new notifications</a></li>
+                  <!-- Notifications will be added here by JavaScript -->
+                </ul>
+              </div>
+
               <span class="me-3 d-none d-md-inline">Welcome, {{ current_user.name }}</span>
             </div>
-            <div class="user-dropdown dropdown">
-              <a class="dropdown-toggle text-decoration-none" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+            <div class="user-dropdown dropdown"> <!-- This was user-dropdown, kept class but it's part of d-flex now -->
+              <a class="dropdown-toggle text-decoration-none text-dark" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown">
                 <i class="fas fa-user-circle me-1"></i> {{ current_user.username }}
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
@@ -468,6 +480,7 @@
         </div>
     </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script> <!-- Socket.IO Client Library -->
   <script>
     // Mobile sidebar toggle functionality
     // Note: The DOMContentLoaded listener for sidebar functionality is kept separate
@@ -660,8 +673,181 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             // Existing sidebar and UI functionality should remain here if it was here before.
-            // The example showAdminUpdatePopup call is removed.
             handleAdminNotifications();
+
+            // Notification Bell Socket.IO Logic
+            const notificationBellArea = document.getElementById('notificationBellArea');
+            if (notificationBellArea) { // Ensure the bell area exists before adding listeners
+                const socket = io(window.location.protocol + '//' + document.domain + ':' + location.port + '/admin'); // Connect to /admin namespace
+                const notificationBadge = document.getElementById('notificationBadge');
+                const notificationList = document.getElementById('notificationList');
+                const notificationBellLink = document.getElementById('notificationBellLink');
+                let unreadNotificationCount = 0;
+                let displayedNotifications = []; // To keep track of displayed notifications and their IDs/read status
+                const MAX_NOTIFICATIONS_DISPLAYED = 10; // Max notifications to show in dropdown
+
+                function updateBadgeDisplay() {
+                    if (notificationBadge) {
+                        notificationBadge.textContent = unreadNotificationCount;
+                        notificationBadge.style.display = unreadNotificationCount > 0 ? 'inline-block' : 'none';
+                    }
+                }
+
+                function formatNotificationText(notification) {
+                    let text = notification.data.message || (notification.type === 'new_form_response' ? 'New Form Response' : 'New Notification');
+                    const timestamp = notification.created_at || notification.timestamp; // Use created_at from DB, fallback to socket timestamp
+                    if (timestamp) {
+                        try {
+                            text += ` at ${new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                        } catch (e) { /* ignore date parsing error */ }
+                    }
+                    return text;
+                }
+
+                function addNotificationToDropdown(notification, prepend = false) {
+                    if (!notificationList) return;
+
+                    // Remove "No new notifications" placeholder
+                    const placeholder = notificationList.querySelector('li a.text-center');
+                    if (placeholder && placeholder.textContent.includes("No new notifications")) {
+                        placeholder.parentElement.remove();
+                    }
+
+                    const listItem = document.createElement('li');
+                    const linkItem = document.createElement('a');
+                    linkItem.classList.add('dropdown-item');
+                    if (!notification.is_read && !notification.initially_marked_read) { // Mark as unread if not explicitly read from DB
+                        linkItem.classList.add('fw-bold'); // Visually indicate unread
+                    }
+                    linkItem.href = "#"; // Or link to actual item
+                    linkItem.dataset.id = notification.id; // Store ID for marking as read
+                    linkItem.textContent = formatNotificationText(notification);
+
+                    listItem.appendChild(linkItem);
+
+                    if (prepend) {
+                        notificationList.insertBefore(listItem, notificationList.firstChild);
+                    } else {
+                        notificationList.appendChild(listItem);
+                    }
+                }
+
+                function refreshNotificationList() {
+                    if (!notificationList) return;
+                    notificationList.innerHTML = ''; // Clear current list
+
+                    let currentUnreadCount = 0;
+                    displayedNotifications.forEach(notif => {
+                        addNotificationToDropdown(notif, false); // Add sorted, not prepending
+                        if (!notif.is_read && !notif.initially_marked_read) {
+                            currentUnreadCount++;
+                        }
+                    });
+
+                    if (displayedNotifications.length === 0) {
+                        notificationList.innerHTML = '<li><a class="dropdown-item text-center" href="#">No new notifications</a></li>';
+                    }
+                    unreadNotificationCount = currentUnreadCount;
+                    updateBadgeDisplay();
+                }
+
+                async function fetchNotifications() {
+                    try {
+                        const response = await fetch('/api/notifications');
+                        if (!response.ok) {
+                            console.error('Failed to fetch notifications:', response.status);
+                            return;
+                        }
+                        const result = await response.json();
+                        if (result.status === 'success' && result.notifications) {
+                            displayedNotifications = result.notifications.map(n => ({...n, initially_marked_read: n.is_read })).slice(0, MAX_NOTIFICATIONS_DISPLAYED);
+                            refreshNotificationList();
+                        }
+                    } catch (error) {
+                        console.error('Error fetching notifications:', error);
+                    }
+                }
+
+                async function markNotificationsAsReadOnServer() {
+                    const idsToMarkRead = displayedNotifications.filter(n => !n.is_read && !n.initially_marked_read).map(n => n.id);
+
+                    // Optimistically mark as read on client
+                    displayedNotifications.forEach(n => {
+                        if (idsToMarkRead.includes(n.id)) {
+                            n.is_read = true;
+                        }
+                    });
+                    unreadNotificationCount = 0; // Reset badge immediately
+                    updateBadgeDisplay();
+                    refreshNotificationList(); // Re-render to remove bold from newly read items
+
+                    if (idsToMarkRead.length > 0) {
+                        try {
+                            await fetch('/api/notifications/mark-read', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids: idsToMarkRead })
+                            });
+                            // Optionally re-fetch or confirm, but optimistic update is often enough for UI
+                        } catch (error) {
+                            console.error('Error marking notifications as read:', error);
+                            // Potentially revert optimistic update here if critical
+                        }
+                    } else {
+                         // If no specific unread IDs, tell server to mark all old unread as read
+                         try {
+                            await fetch('/api/notifications/mark-read', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids: [] }) // Server interprets empty array as "mark all unread"
+                            });
+                        } catch (error) {
+                            console.error('Error marking all notifications as read:', error);
+                        }
+                    }
+                }
+
+                fetchNotifications(); // Initial fetch
+
+                socket.on('connect', function() {
+                    console.log('Socket.IO connected to /admin namespace');
+                    fetchNotifications(); // Fetch latest state on reconnect
+                });
+
+                socket.on('new_notification', function(notificationDataFromServer) {
+                    console.log('New notification received via socket:', notificationDataFromServer);
+
+                    const newNotification = {
+                        id: notificationDataFromServer.id || Date.now(), // Use server ID if available, else temp
+                        created_at: notificationDataFromServer.timestamp || new Date().toISOString(),
+                        type: notificationDataFromServer.type || 'new_form_response',
+                        data: notificationDataFromServer.data || { message: notificationDataFromServer.message },
+                        is_read: false, // New notifications are unread
+                        initially_marked_read: false
+                    };
+
+                    // Add to internal list and refresh UI
+                    displayedNotifications.unshift(newNotification); // Add to beginning
+                    if (displayedNotifications.length > MAX_NOTIFICATIONS_DISPLAYED) {
+                        displayedNotifications.pop(); // Remove oldest if exceeds max
+                    }
+                    refreshNotificationList();
+                });
+
+                if (notificationBellLink) {
+                    notificationBellLink.addEventListener('click', function() {
+                        markNotificationsAsReadOnServer();
+                    });
+                }
+
+                socket.on('disconnect', function() {
+                    console.log('Socket.IO disconnected from /admin namespace');
+                });
+
+                socket.on('connect_error', (err) => {
+                  console.error("Socket.IO connection error:", err.message, err.description, err.data);
+                });
+            }
         });
     {% endblock %}</script>
 </body>
