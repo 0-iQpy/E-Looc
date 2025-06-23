@@ -249,13 +249,77 @@ def admin_dashboard():
     patch_notes = patch_notes_resp.data or []
     system_maintenance = system_maintenance_resp.data or []
 
+    # Fetch unread notifications
+    unread_notifications_resp = (
+        supabase.table("notifications")
+        .select("*", count="exact")
+        .eq("is_read", False)
+        .order("created_at", desc=True) # Show newest unread first
+        .execute()
+    )
+    unread_notifications = unread_notifications_resp.data or []
+    unread_notifications_count = unread_notifications_resp.count or 0
+
+
     return render_template(
         "admin/dashboard.html",
         bulletin_count=bulletin_count,
         news_count=news_count,
         patch_notes=patch_notes,
         system_maintenance=system_maintenance,
+        unread_notifications=unread_notifications,
+        unread_notifications_count=unread_notifications_count,
     )
+
+@app.route("/admin/notifications/mark-as-read/<int:notification_id>", methods=["POST"])
+@login_required
+def mark_notification_as_read(notification_id):
+    try:
+        # Check if notification exists and belongs to the user or is globally updatable by admin
+        # For simplicity, we'll assume any admin can mark any notification as read.
+        # In a multi-tenant system, you'd add more checks.
+        notification_resp = supabase.table("notifications").select("id").eq("id", notification_id).single().execute()
+        if not notification_resp.data:
+            flash("Notification not found.", "danger")
+            return redirect(url_for("admin_dashboard")) # Or return jsonify error if called via JS
+
+        update_resp = supabase.table("notifications").update({"is_read": True}).eq("id", notification_id).execute()
+
+        if hasattr(update_resp, 'data') and update_resp.data:
+            flash("Notification marked as read.", "success")
+        elif hasattr(update_resp, 'error') and update_resp.error:
+            app.logger.error(f"Error marking notification {notification_id} as read: {update_resp.error}")
+            flash(f"Error marking notification as read: {update_resp.error.message}", "danger")
+        else:
+            # This case might occur if the record was already updated or RLS prevented the update without error
+            app.logger.warning(f"Notification {notification_id} mark as read returned no data and no error. Might be already read or RLS issue.")
+            flash("Notification status unchanged or already read.", "info")
+
+
+    except Exception as e:
+        app.logger.error(f"Exception marking notification {notification_id} as read: {type(e).__name__} - {str(e)}")
+        flash("An unexpected error occurred.", "danger")
+
+    # If called via JS, might return jsonify. For simple form/link, redirect.
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.context_processor
+def inject_unread_notifications_count():
+    if current_user.is_authenticated:
+        try:
+            resp = (
+                supabase.table("notifications")
+                .select("id", count="exact")
+                .eq("is_read", False)
+                .execute()
+            )
+            count = resp.count or 0
+            return dict(unread_notifications_global_count=count)
+        except Exception as e:
+            app.logger.error(f"Error fetching unread notifications count for context processor: {e}")
+            return dict(unread_notifications_global_count=0)
+    return dict(unread_notifications_global_count=0)
 
 
 # Bulletin Management
@@ -736,6 +800,96 @@ def business_permit_requests():
 @login_required
 def reports_and_concerns():
     return render_template("admin/reports_and_concerns.html")
+
+# --- Google Form Notification Webhook ---
+@app.route("/api/notifications/google-form", methods=["POST"])
+def google_form_notification():
+    # Basic security: Check for a secret key in the request headers or payload
+    # For this example, we'll expect it in the JSON payload from Google Apps Script
+    # In a production app, consider using request headers for the secret key.
+
+    # Get the API secret key from environment variables for better security
+    EXPECTED_API_SECRET_KEY = os.getenv("GOOGLE_APPS_SCRIPT_SECRET_KEY")
+    if not EXPECTED_API_SECRET_KEY:
+        app.logger.error("GOOGLE_APPS_SCRIPT_SECRET_KEY is not set in environment variables.")
+        return jsonify({"error": "Server configuration error"}), 500
+
+    try:
+        payload = request.get_json()
+        if not payload:
+            app.logger.warning("Webhook: Received empty payload.")
+            return jsonify({"error": "Empty payload"}), 400
+
+        submitted_secret_key = payload.get("secret_key")
+        if submitted_secret_key != EXPECTED_API_SECRET_KEY:
+            app.logger.warning(f"Webhook: Invalid secret key. Submitted: {submitted_secret_key}")
+            return jsonify({"error": "Unauthorized"}), 403
+
+        form_type = payload.get("form_type")
+        submission_timestamp_str = payload.get("submission_timestamp")
+        form_data = payload.get("data")
+
+        if not form_type or not form_data:
+            app.logger.warning(f"Webhook: Missing form_type or data in payload. Form Type: {form_type}")
+            return jsonify({"error": "Missing required fields: form_type, data"}), 400
+
+        # Attempt to parse the submission_timestamp
+        # The Google Apps Script sends it as a string, potentially localized.
+        # We'll try to parse it; if it fails, we'll default to None, and Supabase will use its default.
+        created_at_dt = None
+        if submission_timestamp_str:
+            try:
+                # Using dateutil.parser which is quite flexible
+                created_at_dt = parser.isoparse(submission_timestamp_str)
+                # Ensure it's timezone-aware, defaulting to UTC if not specified
+                if created_at_dt.tzinfo is None:
+                    created_at_dt = pytz.utc.localize(created_at_dt)
+            except ValueError:
+                app.logger.warning(f"Webhook: Could not parse submission_timestamp '{submission_timestamp_str}'. Will use current time for 'created_at'.")
+                # If parsing fails, created_at_dt remains None, Supabase will use its default for created_at if the column definition allows
+                # However, our table has `created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL`.
+                # If we want to store the original string when parsing fails, the table schema needs a different column.
+                # For now, if parsing fails, Supabase's DEFAULT NOW() for `created_at` will be used.
+                # `received_at` will always be NOW() by the database.
+
+        notification_data_to_insert = {
+            "form_type": form_type,
+            "data": form_data, # This should be the e.namedValues from Google Apps Script
+            "is_read": False,
+            # If created_at_dt is successfully parsed, use it. Otherwise, Supabase default will apply.
+            # Supabase client might require an ISO format string for timestamps.
+        }
+        if created_at_dt:
+            notification_data_to_insert["created_at"] = created_at_dt.isoformat()
+
+        # `received_at` will be set by the database default (NOW())
+
+        app.logger.info(f"Webhook: Received valid notification for form_type: {form_type}. Inserting into Supabase.")
+
+        try:
+            insert_response = supabase.table("notifications").insert(notification_data_to_insert).execute()
+
+            # Check if the insert was successful (Supabase typically returns data on success)
+            if hasattr(insert_response, 'data') and insert_response.data:
+                app.logger.info(f"Webhook: Notification successfully inserted. Response: {insert_response.data}")
+                return jsonify({"message": "Notification received and stored successfully", "id": insert_response.data[0].get('id')}), 201
+            elif hasattr(insert_response, 'error') and insert_response.error:
+                app.logger.error(f"Webhook: Supabase insert error: {insert_response.error}")
+                return jsonify({"error": "Failed to store notification in database", "details": str(insert_response.error)}), 500
+            else:
+                app.logger.error(f"Webhook: Supabase insert failed with no specific error data. Response: {insert_response}")
+                return jsonify({"error": "Failed to store notification in database, unknown reason"}), 500
+
+        except Exception as db_e:
+            app.logger.error(f"Webhook: Database exception during insert: {type(db_e).__name__} - {str(db_e)}")
+            app.logger.error(traceback.format_exc())
+            return jsonify({"error": "Database operation failed"}), 500
+
+    except Exception as e:
+        app.logger.error(f"Webhook: General exception: {type(e).__name__} - {str(e)}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({"error": "An unexpected error occurred on the server"}), 500
+
 
 if __name__ == "__main__":
     # Use 0.0.0.0 to be reachable in local network, change debug to False in production
