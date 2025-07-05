@@ -831,3 +831,42 @@ h1, h2, h3, h4, h5, h6 {
     width: 160px;
   }
 }
+
+/* System Maintenance Banner Styles */
+.system-maintenance-banner {
+  background-color: #fff3cd; /* Light yellow, Bootstrap 'warning' bg color */
+  color: #664d03; /* Bootstrap 'warning' text color */
+  padding: 12px 20px;
+  text-align: center;
+  position: sticky; /* Sticks to the top when scrolling */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1050; /* High z-index to be on top of most elements, below modals if any */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex; /* Used for aligning text and button */
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #ffeeba; /* Slightly darker yellow for border */
+}
+
+.system-maintenance-banner span {
+  flex-grow: 1; /* Allows text to take available space */
+  text-align: center; /* Centers the text within the span */
+}
+
+.system-maintenance-banner button {
+  background: none;
+  border: none;
+  font-size: 1.3rem; /* Larger for easier clicking */
+  color: inherit; /* Inherits color from parent banner */
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 0 0.5rem; /* Some padding around the 'x' */
+  line-height: 1; /* Ensures button doesn't take too much vertical space */
+}
+
+.system-maintenance-banner button:hover {
+  opacity: 1;
+}

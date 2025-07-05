@@ -87,21 +87,66 @@
   <div class="col-lg-12 mb-4">
     <div class="card">
       <div class="card-header">
-        <h2 class="h5 mb-0">
-          Recent Unread Notifications
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="h5 mb-0">
+            Recent Unread Notifications
+            {% if unread_notifications_count > 0 %}
+              <span class="badge bg-danger ms-2">{{ unread_notifications_count }}</span>
+            {% endif %}
+          </h2>
           {% if unread_notifications_count > 0 %}
-            <span class="badge bg-danger ms-2">{{ unread_notifications_count }}</span>
+          <form id="markAllReadForm" action="{{ url_for('admin_mark_all_notifications_as_read') }}" method="POST" onsubmit="return confirm('Are you sure you want to mark all notifications as read?');" class="d-inline">
+              <button type="submit" class="btn btn-sm btn-info">
+                  <i class="fas fa-check-double me-1"></i> Mark All as Read
+              </button>
+          </form>
           {% endif %}
-        </h2>
+        </div>
       </div>
       <div class="card-body">
+        {% if unread_notifications_count > 0 and all_form_types_for_filter %}
+        <form method="GET" action="{{ url_for('admin_dashboard') }}" class="mb-3">
+            <div class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <label for="form_type_filter" class="col-form-label">Filter by Type:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="form_type_filter" id="form_type_filter" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">All Unread</option>
+                        {% for type_name in all_form_types_for_filter %}
+                            <option value="{{ type_name }}" {% if type_name == current_form_type_filter %}selected{% endif %}>
+                                {{ type_name | replace('_', ' ') | title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if current_form_type_filter %}
+                <div class="col-auto">
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-sm btn-outline-secondary">Clear Filter</a>
+                </div>
+                {% endif %}
+            </div>
+        </form>
+        {% endif %}
+
         {% if unread_notifications %}
           <div class="list-group">
             {% for notification in unread_notifications %}
               <div class="list-group-item list-group-item-action flex-column align-items-start mb-2">
                 <div class="d-flex w-100 justify-content-between">
-                  <h5 class="mb-1 text-primary">
-                    <i class="fas fa-bell me-2"></i>New {{ notification.form_type | replace('_', ' ') | title }}
+                  {% set icon_class = 'fa-bell text-secondary' %} {# Default icon and color #}
+                  {% set form_type_lower = notification.form_type.lower() %}
+                  {% if 'certificate' in form_type_lower %}
+                      {% set icon_class = 'fa-file-alt text-primary' %}
+                  {% elif 'business' in form_type_lower %}
+                      {% set icon_class = 'fa-briefcase text-success' %}
+                  {% elif 'report' in form_type_lower or 'concern' in form_type_lower %}
+                      {% set icon_class = 'fa-flag text-danger' %}
+                  {% elif 'google_form_notification' == form_type_lower %} {# Generic catch-all from webhook if FORM_TYPE isn't specific #}
+                      {% set icon_class = 'fab fa-google text-info' %}
+                  {% endif %}
+                  <h5 class="mb-1">
+                    <i class="fas {{ icon_class }} me-2"></i>New {{ notification.form_type | replace('_', ' ') | title }}
                   </h5>
                   <small class="text-muted">{{ notification.created_at | datetimeformat }}</small>
                 </div>
@@ -214,4 +259,130 @@
     </div>
   </div>
 </div>
+
+<!-- Post Activity Charts -->
+<div class="row mt-4">
+  <div class="col-lg-12 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="h5 mb-0">Post Activity</h2>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <label for="chartPostType" class="form-label">Post Type:</label>
+            <select id="chartPostType" class="form-select form-select-sm">
+              <option value="bulletin" selected>Bulletins</option>
+              <option value="news">News & Events</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="chartPeriod" class="form-label">Time Period:</label>
+            <select id="chartPeriod" class="form-select form-select-sm">
+              <option value="daily">Daily (Last 30 days)</option>
+              <option value="weekly">Weekly (Last 12 weeks)</option>
+              <option value="monthly" selected>Monthly (Last 12 months)</option>
+              <option value="yearly">Yearly</option>
+              <option value="all">All Time (Monthly)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <canvas id="postActivityChart" style="min-height: 300px; max-height: 400px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('postActivityChart').getContext('2d');
+    let activityChart = null;
+    const chartPostTypeSelect = document.getElementById('chartPostType');
+    const chartPeriodSelect = document.getElementById('chartPeriod');
+
+    async function fetchAndRenderChart(postType, period) {
+        const apiUrl = `/api/charts/post-activity?type=${postType}&period=${period}`;
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({detail: "Unknown error occurred"}));
+                console.error('Error fetching chart data:', response.status, errorData);
+                // Display error on chart area or as an alert
+                if(activityChart) activityChart.destroy(); // Clear previous chart
+                // You could render a message on the canvas, but it's complex.
+                // For now, just log and ensure old chart is gone.
+                alert(`Failed to load chart data: ${errorData.detail || response.statusText}`);
+                return;
+            }
+            const chartData = await response.json();
+
+            if (activityChart) {
+                activityChart.destroy();
+            }
+
+            activityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: chartData.datasets.map(dataset => ({
+                        ...dataset,
+                        fill: false,
+                        // tension: 0.1 // Already set in backend, but can override
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                // Ensure only integers are shown on y-axis if counts are always whole numbers
+                                callback: function(value) { if (Number.isInteger(value)) { return value; } },
+                                stepSize: 1 // Suggests step size, might be overridden by auto-scaling
+                            }
+                        },
+                        x: {
+                           title: {
+                               display: true,
+                               text: 'Period'
+                           }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: `${chartData.datasets[0] ? chartData.datasets[0].label : 'Post Activity'} (${period.charAt(0).toUpperCase() + period.slice(1)})`
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error rendering chart:', error);
+            alert('An error occurred while trying to render the chart.');
+            if(activityChart) activityChart.destroy();
+        }
+    }
+
+    function updateChart() {
+        const selectedPostType = chartPostTypeSelect.value;
+        const selectedPeriod = chartPeriodSelect.value;
+        fetchAndRenderChart(selectedPostType, selectedPeriod);
+    }
+
+    chartPostTypeSelect.addEventListener('change', updateChart);
+    chartPeriodSelect.addEventListener('change', updateChart);
+
+    // Initial chart load
+    updateChart();
+});
+</script>
 {% endblock %}

@@ -40,6 +40,11 @@
 </head>
 
 <body>
+  <div id="systemMaintenanceBanner" class="system-maintenance-banner" style="display:none;">
+    <span id="maintenanceMessageText" style="flex-grow: 1; text-align: center;"></span>
+    <button id="dismissMaintenanceBannerButton" style="background: none; border: none; font-size: 1.2rem; color: inherit; margin-left: 15px;">&times;</button>
+  </div>
+
   <header class="header">
     <div class="logo">
       <img src="/static/bagong-pilipinas.svg" alt="Bagong Pilipinas Logo" />
@@ -520,5 +525,77 @@ s0.parentNode.insertBefore(s1,s0);
 </script>
 <!--End of Tawk.to Script-->
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const banner = document.getElementById('systemMaintenanceBanner');
+    const messageTextElement = document.getElementById('maintenanceMessageText');
+    const dismissButton = document.getElementById('dismissMaintenanceBannerButton');
+    const ACKNOWLEDGED_PUBLIC_MAINTENANCE_PREFIX = 'acknowledged_public_maintenance_';
+
+    if (!banner || !messageTextElement || !dismissButton) {
+        console.warn('Maintenance banner elements not found. Skipping banner logic.');
+        return;
+    }
+
+    fetch('/api/system-maintenance/latest')
+        .then(response => {
+            if (response.status === 204 || response.status === 404) { // No Content or Not Found
+                return null;
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                return response.json();
+            }
+            console.warn('Received non-JSON response for system maintenance status.');
+            return null;
+        })
+        .then(maintenanceData => {
+            if (maintenanceData && maintenanceData.id && maintenanceData.message) {
+                // Check if this specific message has been dismissed
+                const storageKey = ACKNOWLEDGED_PUBLIC_MAINTENANCE_PREFIX + maintenanceData.id;
+                if (localStorage.getItem(storageKey)) {
+                    console.info(`Maintenance message ID ${maintenanceData.id} already acknowledged.`);
+                    return; // Don't show banner
+                }
+
+                let displayMessage = `<strong>${maintenanceData.title || 'System Maintenance'}</strong>: ${maintenanceData.message}`;
+
+                // Attempt to format dates if present, assuming they are ISO strings
+                try {
+                    if (maintenanceData.start_time) {
+                        const startDate = new Date(maintenanceData.start_time);
+                        displayMessage += ` (Starts: ${startDate.toLocaleString()}`;
+                        if (maintenanceData.end_time) {
+                            const endDate = new Date(maintenanceData.end_time);
+                            displayMessage += ` - Ends: ${endDate.toLocaleString()})`;
+                        } else {
+                            displayMessage += `)`;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Could not parse maintenance dates: ", e);
+                    // Dates will not be appended or will be in original format if parsing fails partially
+                }
+
+                messageTextElement.innerHTML = displayMessage;
+                banner.style.display = 'flex'; // Show the banner (it's 'flex' due to CSS)
+
+                dismissButton.onclick = function() {
+                    banner.style.display = 'none';
+                    localStorage.setItem(storageKey, 'true');
+                };
+            } else {
+                banner.style.display = 'none'; // Ensure it's hidden if no data or invalid data
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching system maintenance status:', error);
+            banner.style.display = 'none'; // Hide banner on error
+        });
+});
+</script>
 </body>
 </html>

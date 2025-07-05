@@ -250,15 +250,28 @@ def admin_dashboard():
     system_maintenance = system_maintenance_resp.data or []
 
     # Fetch unread notifications
-    unread_notifications_resp = (
-        supabase.table("notifications")
-        .select("*", count="exact")
-        .eq("is_read", False)
-        .order("created_at", desc=True) # Show newest unread first
-        .execute()
-    )
+    # Fetch unread notifications with optional filtering
+    form_type_filter = request.args.get("form_type_filter")
+    notification_query = supabase.table("notifications").select("*", count="exact").eq("is_read", False)
+
+    if form_type_filter:
+        notification_query = notification_query.eq("form_type", form_type_filter)
+
+    unread_notifications_resp = notification_query.order("created_at", desc=True).execute()
     unread_notifications = unread_notifications_resp.data or []
     unread_notifications_count = unread_notifications_resp.count or 0
+
+    # Fetch distinct form types for the filter dropdown from unread notifications
+    # This is simpler than a separate DB call if the list of types isn't excessively large or needed when no notifications exist.
+    # For a more robust solution with many form types, a separate query or RPC might be better.
+    all_form_types_for_filter = []
+    if unread_notifications_count > 0: # Only try to get form types if there are notifications
+        # To get all possible form_types even if some are filtered out by current view:
+        all_types_query_resp = supabase.table("notifications").select("form_type").eq("is_read", False).execute()
+        if all_types_query_resp.data:
+             all_form_types_for_filter = sorted(list(set(n['form_type'] for n in all_types_query_resp.data if n['form_type'])))
+        else: # Fallback if above fails or returns nothing, use types from current view
+            all_form_types_for_filter = sorted(list(set(n['form_type'] for n in unread_notifications if n['form_type'])))
 
 
     return render_template(
@@ -269,6 +282,8 @@ def admin_dashboard():
         system_maintenance=system_maintenance,
         unread_notifications=unread_notifications,
         unread_notifications_count=unread_notifications_count,
+        all_form_types_for_filter=all_form_types_for_filter,
+        current_form_type_filter=form_type_filter,
     )
 
 @app.route("/admin/notifications/mark-as-read/<int:notification_id>", methods=["POST"])
@@ -301,6 +316,31 @@ def mark_notification_as_read(notification_id):
         flash("An unexpected error occurred.", "danger")
 
     # If called via JS, might return jsonify. For simple form/link, redirect.
+    return redirect(url_for("admin_dashboard"))
+
+@app.route("/admin/notifications/mark-all-as-read", methods=["POST"])
+@login_required
+def admin_mark_all_notifications_as_read():
+    try:
+        update_resp = supabase.table("notifications").update({"is_read": True}).eq("is_read", False).execute()
+
+        # Check if 'data' attribute exists and if it's not empty,
+        # or if count attribute suggests changes were made.
+        # Supabase update often returns a list of updated records in 'data'.
+        # If 'data' is empty but no error, it might mean no records matched the condition.
+        if hasattr(update_resp, 'data') and update_resp.data:
+            count = len(update_resp.data)
+            flash(f"{count} notification(s) marked as read.", "success")
+        elif hasattr(update_resp, 'error') and update_resp.error:
+            app.logger.error(f"Error marking all notifications as read: {update_resp.error}")
+            flash(f"Error marking all notifications as read: {update_resp.error.message}", "danger")
+        else:
+            # This case could mean no unread notifications were found, which isn't an error.
+            flash("No unread notifications to mark as read.", "info")
+
+    except Exception as e:
+        app.logger.error(f"Exception marking all notifications as read: {type(e).__name__} - {str(e)}")
+        flash("An unexpected error occurred while marking all notifications as read.", "danger")
     return redirect(url_for("admin_dashboard"))
 
 
@@ -656,7 +696,7 @@ def get_latest_patch_note():
 
 # System Maintenance API Endpoints
 @app.route("/api/system-maintenance", methods=["GET"])
-@login_required # Assuming only logged-in admins should access this
+@login_required # Admin may want to see all messages, including past ones.
 def get_all_system_maintenance():
     try:
         response = supabase.table("system_maintenance").select("*").order("start_time", desc=True).execute()
@@ -670,7 +710,7 @@ def get_all_system_maintenance():
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 @app.route("/api/system-maintenance/latest", methods=["GET"])
-@login_required # Assuming only logged-in admins should access this
+# No login_required, this is for public consumption
 def get_latest_system_maintenance():
     try:
         now = datetime.now(pytz.utc).isoformat() # Ensure timezone aware comparison
@@ -712,6 +752,295 @@ def get_latest_system_maintenance():
     except Exception as e:
         app.logger.error(f"Exception in get_latest_system_maintenance: {str(e)}")
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
+@app.route("/api/notifications/recent-unread")
+@login_required
+def api_recent_unread_notifications():
+    try:
+        resp = (
+            supabase.table("notifications")
+            .select("id, form_type, created_at")
+            .eq("is_read", False)
+            .order("created_at", desc=True)
+            .limit(5) # Fetch up to 5 recent unread notifications
+            .execute()
+        )
+        return jsonify(resp.data or [])
+    except Exception as e:
+        app.logger.error(f"Error fetching recent unread notifications for API: {type(e).__name__} - {str(e)}")
+        return jsonify({"error": "Failed to fetch recent notifications", "details": str(e)}), 500
+
+from datetime import timedelta # Ensure timedelta is imported
+
+@app.route("/api/charts/post-activity", methods=["GET"])
+@login_required
+def chart_post_activity():
+    post_type = request.args.get("type", "bulletin")  # bulletin or news
+    period = request.args.get("period", "monthly")  # daily, weekly, monthly, yearly, all
+
+    table_name = ""
+    if post_type == "bulletin":
+        table_name = "bulletin_posts"
+    elif post_type == "news":
+        table_name = "news_posts"
+    else:
+        return jsonify({"error": "Invalid post type specified"}), 400
+
+    labels = []
+    data_counts = []
+    manila_tz = pytz.timezone("Asia/Manila") # Use Manila timezone for display
+
+    try:
+        now_local = datetime.now(manila_tz) # Use localized 'now' for period calculations
+
+        if period == "daily": # Last 30 days
+            counts_by_day = {}
+            # Initialize labels for the last 30 days ending today (local time)
+            for i in range(30):
+                day = (now_local - timedelta(days=29) + timedelta(days=i))
+                counts_by_day[day.strftime("%Y-%m-%d")] = 0
+
+            # Fetch data within this range (adjust to UTC for query if DB stores UTC)
+            # Assuming date_posted is stored as TIMESTAMPTZ (UTC)
+            start_utc = (now_local - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0).astimezone(pytz.utc)
+            end_utc = now_local.astimezone(pytz.utc) # Use current time as end for today
+
+            raw_data = supabase.table(table_name)\
+                .select("id, date_posted")\
+                .gte("date_posted", start_utc.isoformat())\
+                .lte("date_posted", end_utc.isoformat())\
+                .execute().data or []
+
+            for item in raw_data:
+                # Convert UTC from DB to local time for correct day grouping
+                item_date_local = parser.isoparse(item['date_posted']).astimezone(manila_tz)
+                day_str = item_date_local.strftime("%Y-%m-%d")
+                if day_str in counts_by_day:
+                    counts_by_day[day_str] += 1
+
+            sorted_days_keys = sorted(counts_by_day.keys())
+            labels = [datetime.strptime(d, "%Y-%m-%d").strftime("%b %d") for d in sorted_days_keys]
+            data_counts = [counts_by_day[d] for d in sorted_days_keys]
+
+        elif period == "weekly": # Last 12 weeks
+            counts_by_week_start = {}
+            # Initialize labels for the last 12 weeks, week starting on Monday
+            for i in range(12):
+                current_week_day = (now_local - timedelta(weeks=11-i))
+                monday_of_that_week = current_week_day - timedelta(days=current_week_day.weekday())
+                counts_by_week_start[monday_of_that_week.strftime("%Y-%m-%d")] = 0
+
+            # Define the UTC range for the query
+            # Start from 12 weeks ago (from Monday of that week)
+            query_start_date_local = (now_local - timedelta(weeks=11)) - timedelta(days=now_local.weekday())
+            start_utc = query_start_date_local.replace(hour=0,minute=0,second=0,microsecond=0).astimezone(pytz.utc)
+            end_utc = now_local.astimezone(pytz.utc)
+
+
+            raw_data = supabase.table(table_name)\
+                .select("id, date_posted")\
+                .gte("date_posted", start_utc.isoformat())\
+                .lte("date_posted", end_utc.isoformat())\
+                .execute().data or []
+
+            for item in raw_data:
+                item_date_local = parser.isoparse(item['date_posted']).astimezone(manila_tz)
+                monday_of_item_week = item_date_local - timedelta(days=item_date_local.weekday())
+                week_key = monday_of_item_week.strftime("%Y-%m-%d")
+                if week_key in counts_by_week_start: # Only count if the week_key is one we initialized
+                     counts_by_week_start[week_key] += 1
+
+            sorted_week_keys = sorted(counts_by_week_start.keys())
+            labels = [datetime.strptime(w, "%Y-%m-%d").strftime("Wk %U (%b %d)") for w in sorted_week_keys] # Week number and date
+            data_counts = [counts_by_week_start[w] for w in sorted_week_keys]
+
+        elif period == "monthly" or period == "all":
+            limit_months = 12 if period == "monthly" else None
+
+            all_db_data = supabase.table(table_name).select("id, date_posted").order("date_posted", desc=False).execute().data or []
+
+            counts_by_month_start = {}
+            if all_db_data:
+                # Determine range of months based on actual data, converted to local time
+                # Ensure first_item_date_local and last_item_date_local are timezone-aware before comparison
+                first_item_date_local = parser.isoparse(all_db_data[0]['date_posted']).astimezone(manila_tz)
+                last_item_date_local = parser.isoparse(all_db_data[-1]['date_posted']).astimezone(manila_tz)
+
+                current_month_iterator = first_item_date_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                # Ensure end_iterate_month is also timezone-aware and correctly represents the start of its month
+                end_iterate_month = last_item_date_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+                while current_month_iterator <= end_iterate_month:
+                    counts_by_month_start[current_month_iterator.strftime("%Y-%m-01")] = 0
+                    if current_month_iterator.month == 12:
+                        current_month_iterator = current_month_iterator.replace(year=current_month_iterator.year + 1, month=1)
+                    else:
+                        current_month_iterator = current_month_iterator.replace(month=current_month_iterator.month + 1)
+
+                for item in all_db_data:
+                    item_date_local = parser.isoparse(item['date_posted']).astimezone(manila_tz)
+                    month_key = item_date_local.strftime("%Y-%m-01") # Group by start of month in local time
+                    if month_key in counts_by_month_start:
+                        counts_by_month_start[month_key] += 1
+
+            sorted_month_keys = sorted(counts_by_month_start.keys())
+
+            if period == "monthly" and limit_months:
+                # Ensure we only take the last N months if there are more than N months of data
+                relevant_month_keys = sorted_month_keys[-limit_months:]
+            else: # 'all'
+                relevant_month_keys = sorted_month_keys
+
+            labels = [datetime.strptime(m_key, "%Y-%m-%d").astimezone(manila_tz).strftime("%b %Y") for m_key in relevant_month_keys]
+            data_counts = [counts_by_month_start.get(m_key, 0) for m_key in relevant_month_keys]
+
+
+        elif period == "yearly":
+            all_db_data = supabase.table(table_name).select("id, date_posted").order("date_posted", desc=False).execute().data or []
+            counts_by_year = {}
+            if all_db_data:
+                # Convert to local timezone first before extracting year
+                first_year_local = parser.isoparse(all_db_data[0]['date_posted']).astimezone(manila_tz).year
+                last_year_local = parser.isoparse(all_db_data[-1]['date_posted']).astimezone(manila_tz).year
+                for year_val in range(first_year_local, last_year_local + 1):
+                    counts_by_year[str(year_val)] = 0 # Key is string year
+
+                for item in all_db_data:
+                    item_year_local_str = parser.isoparse(item['date_posted']).astimezone(manila_tz).strftime("%Y")
+                    if item_year_local_str in counts_by_year:
+                        counts_by_year[item_year_local_str] += 1
+
+            sorted_year_keys = sorted(counts_by_year.keys())
+            labels = sorted_year_keys # Years as strings
+            data_counts = [counts_by_year.get(y_key, 0) for y_key in sorted_year_keys]
+
+        else:
+            return jsonify({"error": "Invalid period specified"}), 400
+
+        return jsonify({"labels": labels, "datasets": [{"label": f"{post_type.title()} Posts", "data": data_counts, "borderColor": "#0e6ba8", "tension": 0.1}]})
+
+    except Exception as e:
+        app.logger.error(f"Error generating chart data for {post_type} ({period}): {type(e).__name__} - {str(e)}")
+        app.logger.error(traceback.format_exc()) # Log full traceback
+        return jsonify({"error": "Failed to generate chart data", "details": str(e)}), 500
+
+# System Maintenance CRUD
+@app.route("/admin/maintenance")
+@login_required
+def admin_maintenance_list():
+    try:
+        resp = supabase.table("system_maintenance").select("*").order("start_time", desc=True).execute()
+        maintenance_messages = resp.data or []
+    except Exception as e:
+        app.logger.error(f"Error fetching system maintenance list: {e}")
+        flash("Failed to load maintenance messages.", "danger")
+        maintenance_messages = []
+    return render_template("admin/maintenance/list.html", maintenance_messages=maintenance_messages)
+
+@app.route("/admin/maintenance/create", methods=["GET", "POST"])
+@login_required
+def admin_maintenance_create():
+    if request.method == "POST":
+        title = request.form.get("title")
+        message = request.form.get("message")
+        start_time_str = request.form.get("start_time")
+        end_time_str = request.form.get("end_time")
+
+        try:
+            # Convert to datetime objects, assuming UTC or that Supabase handles timezone from ISO string
+            # The HTML datetime-local input provides ISO-like format "YYYY-MM-DDTHH:MM"
+            # Ensure these are parsed correctly and are timezone-aware if necessary for Supabase.
+            # For Supabase TIMESTAMPTZ, ISO 8601 strings are generally fine.
+            start_time_dt = parser.isoparse(start_time_str) if start_time_str else None
+            end_time_dt = parser.isoparse(end_time_str) if end_time_str else None
+
+            if not title or not message or not start_time_dt or not end_time_dt:
+                flash("All fields are required.", "danger")
+                return render_template("admin/maintenance/form.html", form_action="Create")
+
+            data = {
+                "title": title,
+                "message": message,
+                "start_time": start_time_dt.isoformat(),
+                "end_time": end_time_dt.isoformat(),
+                "created_by": current_user.id
+            }
+            supabase.table("system_maintenance").insert(data).execute()
+            flash("System maintenance message created successfully!", "success")
+            return redirect(url_for("admin_maintenance_list"))
+        except Exception as e:
+            app.logger.error(f"Error creating system maintenance message: {e}")
+            flash(f"Failed to create message: {str(e)}", "danger")
+
+    return render_template("admin/maintenance/form.html", form_action="Create", maintenance={})
+
+
+@app.route("/admin/maintenance/edit/<int:id>", methods=["GET", "POST"])
+@login_required
+def admin_maintenance_edit(id):
+    try:
+        resp = supabase.table("system_maintenance").select("*").eq("id", id).single().execute()
+        maintenance_message = resp.data
+        if not maintenance_message:
+            flash("Maintenance message not found.", "danger")
+            return redirect(url_for("admin_maintenance_list"))
+    except Exception as e:
+        app.logger.error(f"Error fetching maintenance message for edit (id: {id}): {e}")
+        flash("Failed to load maintenance message for editing.", "danger")
+        return redirect(url_for("admin_maintenance_list"))
+
+    if request.method == "POST":
+        title = request.form.get("title")
+        message = request.form.get("message")
+        start_time_str = request.form.get("start_time")
+        end_time_str = request.form.get("end_time")
+        try:
+            start_time_dt = parser.isoparse(start_time_str) if start_time_str else None
+            end_time_dt = parser.isoparse(end_time_str) if end_time_str else None
+
+            if not title or not message or not start_time_dt or not end_time_dt:
+                flash("All fields are required.", "danger")
+                # Pass current data back to form
+                maintenance_message.update(request.form.to_dict()) # Update with current form values for repopulation
+                return render_template("admin/maintenance/form.html", form_action="Edit", maintenance=maintenance_message)
+
+            update_data = {
+                "title": title,
+                "message": message,
+                "start_time": start_time_dt.isoformat(),
+                "end_time": end_time_dt.isoformat(),
+                # "updated_by": current_user.id # If you have an updated_by field
+                # "updated_at": datetime.now(pytz.utc).isoformat() # If you have an updated_at field
+            }
+            supabase.table("system_maintenance").update(update_data).eq("id", id).execute()
+            flash("System maintenance message updated successfully!", "success")
+            return redirect(url_for("admin_maintenance_list"))
+        except Exception as e:
+            app.logger.error(f"Error updating system maintenance message (id: {id}): {e}")
+            flash(f"Failed to update message: {str(e)}", "danger")
+            maintenance_message.update(request.form.to_dict()) # Update with current form values for repopulation
+            return render_template("admin/maintenance/form.html", form_action="Edit", maintenance=maintenance_message)
+
+    # For GET request, ensure times are formatted for datetime-local input
+    # The value attribute of <input type="datetime-local"> needs "YYYY-MM-DDTHH:MM"
+    if maintenance_message.get("start_time"):
+        maintenance_message["start_time_form"] = parser.isoparse(maintenance_message["start_time"]).strftime("%Y-%m-%dT%H:%M")
+    if maintenance_message.get("end_time"):
+        maintenance_message["end_time_form"] = parser.isoparse(maintenance_message["end_time"]).strftime("%Y-%m-%dT%H:%M")
+
+    return render_template("admin/maintenance/form.html", form_action="Edit", maintenance=maintenance_message)
+
+@app.route("/admin/maintenance/delete/<int:id>", methods=["POST"])
+@login_required
+def admin_maintenance_delete(id):
+    try:
+        supabase.table("system_maintenance").delete().eq("id", id).execute()
+        flash("System maintenance message deleted successfully!", "success")
+    except Exception as e:
+        app.logger.error(f"Error deleting system maintenance message (id: {id}): {e}")
+        flash("Failed to delete message.", "danger")
+    return redirect(url_for("admin_maintenance_list"))
 
 # Setup initial admin user
 

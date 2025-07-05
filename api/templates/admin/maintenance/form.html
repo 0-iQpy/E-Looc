@@ -1,0 +1,49 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ form_action }} System Maintenance - E-Looc Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{{ form_action }} System Maintenance Message</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Message Details</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="">
+                {# CSRF token if you were using Flask-WTF: {{ form.csrf_token }} #}
+
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="title" name="title" value="{{ maintenance.title or '' }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="message" class="form-label">Message <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="message" name="message" rows="5" required>{{ maintenance.message or '' }}</textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="start_time" class="form-label">Start Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="start_time" name="start_time" value="{{ maintenance.start_time_form or '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="end_time" class="form-label">End Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="end_time" name="end_time" value="{{ maintenance.end_time_form or '' }}" required>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> {{ form_action }} Message
+                    </button>
+                    <a href="{{ url_for('admin_maintenance_list') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
